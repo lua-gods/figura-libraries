@@ -30,7 +30,7 @@ function lib.new(modelList)
       floorFriction = 0.2,
       gravity = vec(0, -0.08, 0),
       maxDist = 1.2,
-      maxAngle = 10,
+      maxAngle = 30,
       models = modelList
    }
    -- start part
@@ -74,7 +74,7 @@ function lib.new(modelList)
          return
       end
       tail.startPos = toWorld:apply()
-      tail.oldDir = toWorld:applyDir(tailDir)
+      tail.oldDir = toWorld:applyDir(tailDir):normalize()
       local fromWorld = toWorld:inverted()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
@@ -137,19 +137,10 @@ local function tickTail(tail)
    for i, v in pairs(tail.points) do
       tail.oldPoints[i] = v
    end
-
-   -- local newTailPos, newTailDir = tail.posFunc()
-   -- if newTailPos and newTailPos.x == newTailPos.x then
-   --    tail.points[0] = newTailPos
-   -- end
-   -- if newTailDir and newTailDir.x == newTailDir.x then
-   --    tail.oldDir = newTailDir
-   -- end
-
-   tail.points[0] = tail.startPos
-
+   
    log = {}
-
+   tail.points[0] = tail.startPos
+   
    local oldDir = tail.oldDir
    for i, pos in ipairs(tail.points) do
       local previous = tail.points[i - 1]
@@ -159,15 +150,22 @@ local function tickTail(tail)
       local offsetLength = offset:length()
       local dir = offsetLength > 0.01 and offset / offsetLength or vec(0, 0, 1) -- prevent normalized vector being length 0 when its vec(0, 0, 0)
       -- clamp angle
+      table.insert(log, '[ '..i..' ]')
+      table.insert(log, '§c0§7 clamped§f')
       local targetDir = dir
       local angle = math.deg(math.acos(dir:dot(oldDir)))
       local maxAngle = tail.config.maxAngle
       if angle > maxAngle then -- clamp angle
          local rotAxis = oldDir:crossed(dir)
-         if rotAxis:lengthSquared() > 0.1 then
+         log[#log] = '§62§7 clamped§f'
+         if rotAxis:lengthSquared() > 0.001 then
+            log[#log] = '§a1§7 clamped§f'
             targetDir = vectors.rotateAroundAxis(math.min(angle, maxAngle) - angle, dir, rotAxis):normalize()
          end
       end
+      table.insert(log, '§e'..tostring(oldDir:crossed(dir))..'§f')
+      table.insert(log, '§6'..tostring(oldDir:crossed(dir):lengthSquared())..'§f')
+      table.insert(log, '§b'..math.floor(angle)..'§f')
       local targetPos = previous + targetDir * dist
       -- clamp distance
       offsetLength = math.min(offsetLength, maxDist)
@@ -175,6 +173,10 @@ local function tickTail(tail)
       -- pull or push to desired length
       local pullPushStrength = offsetLength / dist
       pullPushStrength = math.abs(pullPushStrength - 1)
+      table.insert(log, '§d'..pullPushStrength..'§f')
+      pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) * 0.1
+      pullPushStrength = math.min(pullPushStrength, 1)
+      table.insert(log, '§d'..pullPushStrength..'§f')
 
       local targetOffset = targetPos - pos
       
