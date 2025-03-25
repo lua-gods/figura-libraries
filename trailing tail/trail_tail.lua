@@ -1,16 +1,16 @@
 local lib = {}
 local tails = {} ---@type auria.trail_tail[]
 ---@class auria.trail_tail
+---@field startPos Vector3
+---@field oldDir Vector3
 ---@field points Vector3[]
 ---@field oldPoints Vector3[]
 ---@field distances number[]
+---@field startDist number[]
 ---@field vels Vector3[]
----@field oldDir Vector3
 ---@field posFunc fun(): pos: Vector3?, dir: Vector3?
 ---@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number}
 local trailingTail = {}
-
-local worldModel = models:newPart('trail_tails', 'World')
 
 local function directionToEular(dirVec)
    local yaw = math.atan2(dirVec.x, dirVec.z)
@@ -18,11 +18,11 @@ local function directionToEular(dirVec)
    return vec(-math.deg(pitch), math.deg(yaw), 0)
 end
 
+-- -@param posFunc fun(): pos: Vector3?, dir: Vector3? # posFunc will be called every tick it should return position and direction of tail, you can use modelpart:partToWorldMatrix and :apply, :applyDir or player:getPos() and some extra math for less delay
 ---creates new trailing tail
 ---@param modelList ModelPart[] # all modelparts will be parented to world
----@param posFunc fun(): pos: Vector3?, dir: Vector3? # posFunc will be called every tick it should return position and direction of tail, you can use modelpart:partToWorldMatrix and :apply, :applyDir or player:getPos() and some extra math for less delay
 ---@return auria.trail_tail
-function lib.new(modelList, posFunc)
+function lib.new(modelList)
    local tail = {}
    tail.config = {
       bounce = 0.8,
@@ -33,16 +33,25 @@ function lib.new(modelList, posFunc)
       maxAngle = 10,
       models = modelList
    }
-   tail.posFunc = posFunc
+   -- start part
+   local startModel = modelList[1]:getParent():newPart(modelList[1]:getName()..'start')
+   startModel:setPivot(modelList[1]:getPivot())
+   for _, v in ipairs(modelList) do
+      startModel:addChild(v:remove())
+   end
+   -- tail.posFunc = posFunc
    tail.points = {}
    tail.distances = {}
+   tail.startPos = vec(0, 0, 0)
    -- get distances
-   local pivot = modelList[1]:getPivot()
-   for i = 2, #modelList do
-      local newPivot = modelList[i]:getPivot()
-      local dist = (newPivot - pivot):length()
-      pivot = newPivot
-      table.insert(tail.distances, dist / 16)
+   do
+      local pivot = modelList[1]:getPivot()
+      for i = 2, #modelList do
+         local newPivot = modelList[i]:getPivot()
+         local dist = (newPivot - pivot):length()
+         pivot = newPivot
+         table.insert(tail.distances, dist / 16)
+      end
    end
    table.insert(tail.distances, tail.distances[#tail.distances])
    -- generate data for points
@@ -50,24 +59,42 @@ function lib.new(modelList, posFunc)
    tail.points[0] = vec(0, 0, 0)
    tail.oldPoints = {[0] = vec(0, 0, 0)}
    tail.oldDir = vec(0, 0, 1)
+   tail.startDist = {}
    for i = 1, #tail.distances do
       tail.vels[i] = vec(0, 0, 0)
       tail.points[i] = vec(0, 0, 0)
       tail.oldPoints[i] = vec(0, 0, 0)
+      tail.startDist[i] = 1 - (i - 1) / (#modelList - 1)
    end
-   -- parent to world
-   for i, model in pairs(modelList) do
-      model:setParentType('World')
-      local k = i - 1
-      local offset = model:getPivot()
-      model.preRender = function(delta)
-         local pos = math.lerp(tail.oldPoints[k], tail.points[k], delta)
+   -- render
+   startModel.midRender = function(delta)
+      local toWorld = startModel:partToWorldMatrix()
+      if toWorld.v11 ~= toWorld.v11 then -- NaN
+         return
+      end
+      tail.startPos = toWorld:apply()
+      tail.oldDir = toWorld:applyDir(0, 0, 1)
+      local fromWorld = toWorld:inverted()
+      local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
+      local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
+      for i = 1, #modelList do
+         local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
          local rot = directionToEular(nextPos - pos)
-         model:setPos(pos * 16 - offset)
-         model:setRot(rot)
+
+         local mat = matrices.mat4()
+         mat:scale(1 / 16)
+         mat:translate(-model:getPivot() / 16)
+         mat:rotate(rot)
+         mat:translate(pos)
+         mat:translate(offset * tail.startDist[i])
+         mat = fromWorld * mat
+         modelList[i]:setMatrix(mat)
+
+         pos = nextPos
       end
    end
+
    -- add tail and return
    local id = #tails + 1
    tails[id] = tail
@@ -110,13 +137,15 @@ local function tickTail(tail)
       tail.oldPoints[i] = v
    end
 
-   local newTailPos, newTailDir = tail.posFunc()
-   if newTailPos and newTailPos.x == newTailPos.x then
-      tail.points[0] = newTailPos
-   end
-   if newTailDir and newTailDir.x == newTailDir.x then
-      tail.oldDir = newTailDir
-   end
+   -- local newTailPos, newTailDir = tail.posFunc()
+   -- if newTailPos and newTailPos.x == newTailPos.x then
+   --    tail.points[0] = newTailPos
+   -- end
+   -- if newTailDir and newTailDir.x == newTailDir.x then
+   --    tail.oldDir = newTailDir
+   -- end
+
+   tail.points[0] = tail.startPos
 
    log = {}
 
