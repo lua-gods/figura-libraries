@@ -67,13 +67,14 @@ function lib.new(modelList)
       tail.startDist[i] = 1 - (i - 1) / (#modelList - 1)
    end
    -- render
+   local tailDir = (modelList[2]:getPivot() - modelList[1]:getPivot()):normalize()
    startModel.midRender = function(delta)
       local toWorld = startModel:partToWorldMatrix()
       if toWorld.v11 ~= toWorld.v11 then -- NaN
          return
       end
       tail.startPos = toWorld:apply()
-      tail.oldDir = toWorld:applyDir(0, 0, 1)
+      tail.oldDir = toWorld:applyDir(tailDir)
       local fromWorld = toWorld:inverted()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
