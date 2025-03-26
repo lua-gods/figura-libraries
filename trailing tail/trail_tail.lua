@@ -45,12 +45,16 @@ function lib.new(modelList)
    tail.distances = {}
    tail.startPos = vec(0, 0, 0)
    -- get distances
+   local pivotOffsets = {}
    do
       local pivot = modelList[1]:getPivot()
+      table.insert(pivotOffsets, pivot)
       for i = 2, #modelList do
          local newPivot = modelList[i]:getPivot()
          local dist = (newPivot - pivot):length()
          pivot = newPivot
+         local rotMat = matrices.rotation3(directionToEular(newPivot - pivot))
+         table.insert(pivotOffsets, (rotMat:inverted() * newPivot).xy_ * rotMat)
          table.insert(tail.distances, dist / 16)
       end
    end
@@ -84,15 +88,18 @@ function lib.new(modelList)
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
 
-         rotMat:rightMultiply(matrices.mat3():rotate(directionToEular(rotMat:inverted() * (nextPos - pos))))
+         rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * (nextPos - pos))))
 
          local mat = matrices.mat4()
-         mat:scale(1 / 16)
-         mat:translate(-model:getPivot() / 16)
+         mat:translate(-model:getPivot())
          mat:multiply(rotMat:augmented())
+         mat:scale(1 / 16)
          mat:translate(pos)
          mat:translate(offset * tail.startDist[i])
          mat = fromWorld * mat
+         mat:translate(pivotOffsets[i])
+         -- mat:translate(model:getPivot().xy_)
+         -- mat:translate(i == 1 and model:getPivot() or (model:getPivot() - modelList[1]:getPivot()))
          modelList[i]:setMatrix(mat)
 
          pos = nextPos
