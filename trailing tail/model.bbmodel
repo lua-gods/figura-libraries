@@ -386,7 +386,7 @@
 			"locked": false,
 			"visibility": true,
 			"autouv": 0,
-			"selected": true,
+			"selected": false,
 			"children": [
 				{
 					"name": "tail1",
@@ -427,7 +427,7 @@
 					"locked": false,
 					"visibility": true,
 					"autouv": 0,
-					"selected": false,
+					"selected": true,
 					"children": ["d16563bb-f74a-f3e6-9c16-ea7e74af4544"]
 				},
 				{

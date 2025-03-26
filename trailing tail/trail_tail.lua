@@ -13,6 +13,8 @@ local tails = {} ---@type auria.trail_tail[]
 local trailingTail = {}
 
 -- from figura code snippets
+---@param dirVec Vector3
+---@return Vector3
 local function directionToEular(dirVec)
    local yaw = math.atan2(dirVec.x, dirVec.z)
    local pitch = math.atan2(dirVec.y, dirVec.xz:length())
@@ -98,8 +100,6 @@ function lib.new(modelList)
          mat:translate(offset * tail.startDist[i])
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
-         -- mat:translate(model:getPivot().xy_)
-         -- mat:translate(i == 1 and model:getPivot() or (model:getPivot() - modelList[1]:getPivot()))
          modelList[i]:setMatrix(mat)
 
          pos = nextPos
