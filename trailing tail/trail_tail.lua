@@ -12,6 +12,7 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number}
 local trailingTail = {}
 
+-- from figura code snippets
 local function directionToEular(dirVec)
    local yaw = math.atan2(dirVec.x, dirVec.z)
    local pitch = math.atan2(dirVec.y, dirVec.xz:length())
@@ -75,18 +76,22 @@ function lib.new(modelList)
       end
       tail.startPos = toWorld:apply()
       tail.oldDir = toWorld:applyDir(tailDir):normalize()
+      local oldRot = directionToEular(tail.oldDir)
+      local rotMat = matrices.mat3()
+      -- local oldRot = vec(0, 0, 0)
       local fromWorld = toWorld:inverted()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
       for i = 1, #modelList do
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
-         local rot = directionToEular(nextPos - pos)
+
+         rotMat:rightMultiply(matrices.mat3():rotate(directionToEular(rotMat:inverted() * (nextPos - pos))))
 
          local mat = matrices.mat4()
          mat:scale(1 / 16)
          mat:translate(-model:getPivot() / 16)
-         mat:rotate(rot)
+         mat:multiply(rotMat:augmented())
          mat:translate(pos)
          mat:translate(offset * tail.startDist[i])
          mat = fromWorld * mat
