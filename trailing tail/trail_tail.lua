@@ -140,7 +140,7 @@ local function movePointWithCollision(pos, newPos)
 end
 
 local log = {}
-local m = models:newPart('', 'Hud'):newText(''):outline(true):pos(-2, -2, 0)
+local m = models:newPart('', 'Hud'):newText(''):outline(true):pos(-2, -2, 0):setLight(15, 15)
 
 ---@overload fun(tail: auria.trail_tail)
 local function tickTail(tail)
@@ -163,7 +163,7 @@ local function tickTail(tail)
       table.insert(log, '[ '..i..' ]')
       table.insert(log, '§c0§7 clamped§f')
       local targetDir = dir
-      local angle = math.deg(math.acos(dir:dot(oldDir)))
+      local angle = math.deg(math.acos(math.clamp(dir:dot(oldDir), -1, 1)))
       local maxAngle = tail.config.maxAngle
       if angle > maxAngle then -- clamp angle
          local rotAxis = oldDir:crossed(dir)
@@ -254,7 +254,7 @@ end
 function events.render(delta)
    if not next(tails) then return end
    for _, tail in pairs(tails) do
-      renderTail(tail, delta)
+      -- renderTail(tail, delta)
    end
 end
 
