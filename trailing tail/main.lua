@@ -1,13 +1,24 @@
 local trailTail = require('trail_tail')
 
 trailTail.new({
-   models.model.tail.tail1,
-   models.model.tail.tail2,
-   models.model.tail.tail3,
-   models.model.tail.tail4,
-   models.model.tail.tail5,
-   models.model.tail.tail6,
-   models.model.tail.tail7,
+   models.model.tail1,
+   models.model.tail1.tail2,
+   models.model.tail1.tail2.tail3,
+   models.model.tail1.tail2.tail3.tail4,
+   models.model.tail1.tail2.tail3.tail4.tail5,
+   models.model.tail1.tail2.tail3.tail4.tail5.tail6,
+   models.model.tail1.tail2.tail3.tail4.tail5.tail6.tail7,
+})
+
+trailTail.new({
+   models.model.testtail,
+   models.model.testtail.testtail2,
+   models.model.testtail.testtail2.testtail3,
+   models.model.testtail.testtail2.testtail3.testtail4,
+   models.model.testtail.testtail2.testtail3.testtail4.testtail5,
+   models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6,
+   models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6.testtail7,
+   models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6.testtail7.testtail8,
 })
 
 -- hide legs

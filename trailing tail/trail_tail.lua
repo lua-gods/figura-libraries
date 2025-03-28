@@ -50,13 +50,14 @@ function lib.new(modelList)
    local pivotOffsets = {}
    do
       local pivot = modelList[1]:getPivot()
+      local offset = vec(0, 0, 0)
       table.insert(pivotOffsets, pivot)
       for i = 2, #modelList do
          local newPivot = modelList[i]:getPivot()
          local dist = (newPivot - pivot):length()
+         offset = offset - newPivot + pivot
          pivot = newPivot
-         local rotMat = matrices.rotation3(directionToEular(newPivot - pivot))
-         table.insert(pivotOffsets, (rotMat:inverted() * newPivot).xy_ * rotMat)
+         table.insert(pivotOffsets, pivot + offset)
          table.insert(tail.distances, dist / 16)
       end
    end
@@ -254,7 +255,7 @@ end
 function events.render(delta)
    if not next(tails) then return end
    for _, tail in pairs(tails) do
-      -- renderTail(tail, delta)
+      renderTail(tail, delta)
    end
 end
 
