@@ -9,7 +9,7 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field startDist number[]
 ---@field vels Vector3[]
 ---@field posFunc fun(): pos: Vector3?, dir: Vector3?
----@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number}
+---@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number}
 local trailingTail = {}
 
 -- from figura code snippets
@@ -21,7 +21,6 @@ local function directionToEular(dirVec)
    return vec(-math.deg(pitch), math.deg(yaw), 0)
 end
 
--- -@param posFunc fun(): pos: Vector3?, dir: Vector3? # posFunc will be called every tick it should return position and direction of tail, you can use modelpart:partToWorldMatrix and :apply, :applyDir or player:getPos() and some extra math for less delay
 ---creates new trailing tail
 ---@param modelList ModelPart[] # all modelparts will be parented to world
 ---@return auria.trail_tail
@@ -34,7 +33,8 @@ function lib.new(modelList)
       gravity = vec(0, -0.08, 0),
       maxDist = 1.2,
       maxAngle = 30,
-      models = modelList
+      models = modelList,
+      partToWorldDelay = 0.75
    }
    -- start part
    local startModel = modelList[1]:getParent():newPart(modelList[1]:getName()..'start')
@@ -72,7 +72,7 @@ function lib.new(modelList)
       tail.vels[i] = vec(0, 0, 0)
       tail.points[i] = vec(0, 0, 0)
       tail.oldPoints[i] = vec(0, 0, 0)
-      tail.startDist[i] = 1 - (i - 1) / (#modelList - 1)
+      tail.startDist[i] = (i - 1) / (#modelList - 1)
    end
    -- render
    local tailDir = (modelList[2]:getPivot() - modelList[1]:getPivot()):normalize()
@@ -83,6 +83,9 @@ function lib.new(modelList)
       end
       tail.startPos = toWorld:apply()
       tail.oldDir = toWorld:applyDir(tailDir):normalize()
+   
+      local partToWorldDelay = tail.config.partToWorldDelay
+
       local rotMat = matrices.mat3()
       local fromWorld = toWorld:inverted()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
@@ -98,7 +101,7 @@ function lib.new(modelList)
          mat:multiply(rotMat:augmented())
          mat:scale(1 / 16)
          mat:translate(pos)
-         mat:translate(offset * tail.startDist[i])
+         mat:translate(offset * ( 1 - tail.startDist[i] * partToWorldDelay))
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
          modelList[i]:setMatrix(mat)
