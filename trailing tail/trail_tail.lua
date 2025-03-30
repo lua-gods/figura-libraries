@@ -84,6 +84,7 @@ function lib.new(modelList)
       tail.oldDir = toWorld:applyDir(tailDir):normalize()
    
       local partToWorldDelay = tail.config.partToWorldDelay
+      local worldRotMat = toWorld:deaugmented():augmented()
 
       local rotMat = matrices.mat3()
       local fromWorld = toWorld:inverted()
@@ -97,10 +98,9 @@ function lib.new(modelList)
          local dir = (nextPos - pos):normalize()
          
          local myAnimMat = matrices.mat4()
-         -- myAnimMat:translate(-model:getPivot())
+         myAnimMat = worldRotMat:inverted() * myAnimMat
          myAnimMat:rotate(model:getAnimRot())
-         -- myAnimMat:translate(model:getPivot())
-         -- myAnimMat:translate(model:getAnimPos())
+         myAnimMat = worldRotMat * myAnimMat
 
          animMat = animMat * myAnimMat
 
@@ -110,7 +110,6 @@ function lib.new(modelList)
          rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * dir)))
 
          local mat = matrices.mat4()
-         -- mat = animMat * mat
          mat:translate(-model:getPivot())
          mat:multiply(rotMat:augmented())
          mat:scale(1 / 16)
@@ -121,7 +120,6 @@ function lib.new(modelList)
          modelList[i]:setMatrix(mat)
 
          renderPos = renderPos + dir * tail.distances[i]
-         particles['end_rod']:pos(renderPos):lifetime(2):spawn()
 
          pos = nextPos
       end
