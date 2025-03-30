@@ -42,7 +42,6 @@ function lib.new(modelList)
    for _, v in ipairs(modelList) do
       startModel:addChild(v:remove())
    end
-   -- tail.posFunc = posFunc
    tail.points = {}
    tail.distances = {}
    tail.startPos = vec(0, 0, 0)
@@ -88,23 +87,41 @@ function lib.new(modelList)
 
       local rotMat = matrices.mat3()
       local fromWorld = toWorld:inverted()
+      local animMat = matrices.mat4()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
+      local renderPos = pos
       for i = 1, #modelList do
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
+         local dir = (nextPos - pos):normalize()
+         
+         local myAnimMat = matrices.mat4()
+         -- myAnimMat:translate(-model:getPivot())
+         myAnimMat:rotate(model:getAnimRot())
+         -- myAnimMat:translate(model:getPivot())
+         -- myAnimMat:translate(model:getAnimPos())
 
-         rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * (nextPos - pos))))
+         animMat = animMat * myAnimMat
+
+         dir = animMat:applyDir(dir)
+         dir = dir:normalize()
+
+         rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * dir)))
 
          local mat = matrices.mat4()
+         -- mat = animMat * mat
          mat:translate(-model:getPivot())
          mat:multiply(rotMat:augmented())
          mat:scale(1 / 16)
-         mat:translate(pos)
+         mat:translate(renderPos)
          mat:translate(offset * ( 1 - tail.startDist[i] * partToWorldDelay))
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
          modelList[i]:setMatrix(mat)
+
+         renderPos = renderPos + dir * tail.distances[i]
+         particles['end_rod']:pos(renderPos):lifetime(2):spawn()
 
          pos = nextPos
       end
