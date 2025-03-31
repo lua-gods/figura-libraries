@@ -1,5 +1,6 @@
 local lib = {}
 local tails = {} ---@type auria.trail_tail[]
+---@alias auria.trail_tail.config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number}
 ---@class auria.trail_tail
 ---@field startPos Vector3
 ---@field oldDir Vector3
@@ -9,10 +10,10 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field startDist number[]
 ---@field vels Vector3[]
 ---@field modelScale number
----@field models number
----@field posFunc fun(): pos: Vector3?, dir: Vector3?
----@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number}
+---@field models ModelPart[]
+---@field config auria.trail_tail.config
 local trailingTail = {}
+trailingTail.__index = trailingTail
 
 -- from figura code snippets
 ---@param dirVec Vector3
@@ -38,6 +39,7 @@ function lib.new(tailModel)
       partToWorldDelay = 0.75,
       physicsStrength = 1
    }
+   setmetatable(tail, trailingTail)
    -- find model parts
    local modelList = tailModel
    if type(tailModel) ~= 'table' then
@@ -53,12 +55,11 @@ function lib.new(tailModel)
    end
    tail.models = modelList
    -- start part
-   local startModel = modelList[1]:getParent():newPart(modelList[1]:getName()..'start')
+   local startModel = modelList[1]:getParent():newPart(modelList[1]:getName())
    startModel:setPivot(modelList[1]:getPivot())
    for _, v in ipairs(modelList) do
       startModel:addChild(v:remove())
    end
-   tail.points = {}
    tail.distances = {}
    tail.startPos = vec(0, 0, 0)
    tail.modelScale = math.playerScale
@@ -80,7 +81,7 @@ function lib.new(tailModel)
    table.insert(tail.distances, tail.distances[#tail.distances])
    -- generate data for points
    tail.vels = {}
-   tail.points[0] = vec(0, 0, 0)
+   tail.points = {[0] = vec(0, 0, 0)}
    tail.oldPoints = {[0] = vec(0, 0, 0)}
    tail.oldDir = vec(0, 0, 1)
    tail.startDist = {}
@@ -92,6 +93,8 @@ function lib.new(tailModel)
    end
    -- render
    local tailDir = (modelList[2]:getPivot() - modelList[1]:getPivot()):normalize()
+   local startDist = tail.startDist
+   local distances = tail.distances
    startModel.midRender = function(delta)
       local toWorld = startModel:partToWorldMatrix()
       if toWorld.v11 ~= toWorld.v11 then -- NaN
@@ -109,6 +112,7 @@ function lib.new(tailModel)
       tail.modelScale = modelWorldScale
       
       local worldRotMat = toWorld:deaugmented():augmented()
+      local worldRotMatInverted = worldRotMat:inverted()
       local rotMat = matrices.mat3()
       local fromWorld = toWorld:inverted()
       local animMat = matrices.mat4()
@@ -125,13 +129,14 @@ function lib.new(tailModel)
          if dir:lengthSquared() < 0.1 then dir = vec(0, 0, 1) end -- this one case when dir can be 0 0 0
          -- animation
          local myAnimMat = matrices.mat4()
-         myAnimMat = worldRotMat:inverted() * myAnimMat
+         myAnimMat = worldRotMatInverted * myAnimMat
          myAnimMat:rotate(model:getAnimRot())
+         myAnimMat:translate(model:getAnimPos())
          myAnimMat = worldRotMat * myAnimMat
          animMat = animMat * myAnimMat
-         -- dir
-         dir = animMat:applyDir(dir)
-         dir = dir:normalize()
+         -- apply animation matrix
+         dir = animMat:applyDir(dir):normalize()
+         renderPos = renderPos + myAnimMat:apply()
          -- rotation
          rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * dir)))
          -- all matrix stuff
@@ -140,12 +145,12 @@ function lib.new(tailModel)
          mat:multiply(rotMat:augmented())
          mat:scale(modelScale)
          mat:translate(renderPos)
-         mat:translate(offset * ( 1 - tail.startDist[i] * partToWorldDelay))
+         mat:translate(offset * ( 1 - startDist[i] * partToWorldDelay))
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
          modelList[i]:setMatrix(mat)
          -- store for next part
-         renderPos = renderPos + dir * tail.distances[i] * modelWorldScale
+         renderPos = renderPos + dir * distances[i] * modelWorldScale
          pos = nextPos
       end
    end
@@ -154,6 +159,16 @@ function lib.new(tailModel)
    local id = #tails + 1
    tails[id] = tail
    return tail
+end
+
+---sets config of tail, you can also do tail.config to get config table
+---@param tbl auria.trail_tail.config
+---@return self 
+function trailingTail:setConfig(tbl)
+   for i, v in pairs(tbl) do
+      self.config[i] = v
+   end
+   return self
 end
 
 ---@overload fun(Pos: Vector3): Vector3?
@@ -235,53 +250,10 @@ local function tickTail(tail)
    end
 end
 
-local lineLib = require('GNLineLib')
-local lines = {} ---@type line[][]
-
----@overload fun(tail: auria.trail_tail, delta: number)
-local function renderTail(tail, delta)
-   -- debug lines
-   -- do return end
-   for i, posNew in ipairs(tail.points) do
-      local pos = math.lerp(tail.oldPoints[i], posNew, delta) --[[@as Vector3]]
-      local oldPos = math.lerp(tail.oldPoints[i - 1], tail.points[i - 1], delta) --[[@as Vector3]]
-      if not lines[i] then
-         lines[i] = {
-            [-1] = lineLib:new(),
-            lineLib:new():setWidth(0.08):setDepth(-0.05),
-            lineLib:new():setWidth(0.01):setDepth(-0.25),
-            lineLib:new():setWidth(0.01):setDepth(-0.5),
-            lineLib:new():setWidth(0.01):setDepth(-0.8),
-         }
-      end
-      local distOffset = (pos - oldPos):length()
-      local dist = tail.distances[i]
-      distOffset = distOffset > dist and (distOffset - dist) / (dist * 0.5) or distOffset / dist - 1
-      distOffset = math.clamp(distOffset, -1, 1)
-      local color = math.lerp(
-         vec(1, 1, 1),
-         distOffset > 0 and vec(1, 0, 0) or vec(0, 1, 0),
-         math.abs(distOffset)
-      )
-      for k, v in pairs(lines[i]) do
-         v:setA(pos)
-         v:setB(oldPos)
-         v:setColor(k > 0 and color or color * 0.5)
-      end
-   end
-end
-
 function events.tick()
    if not next(tails) then return end
    for _, tail in pairs(tails) do
       tickTail(tail)
-   end
-end
-
-function events.render(delta)
-   if not next(tails) then return end
-   for _, tail in pairs(tails) do
-      renderTail(tail, delta)
    end
 end
 

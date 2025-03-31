@@ -1,7 +1,6 @@
 local trailTail = require('trail_tail')
 
 local tail = trailTail.new(models.model.tail1)
--- trailTail.new(models.model.testtail)
 
 -- hide legs
 vanilla_model.LEFT_LEG:setVisible(false)
@@ -20,30 +19,49 @@ end
 local page = action_wheel:newPage()
 action_wheel:setPage(page)
 
-local state = 0
-local oldState = 0
-local target = 0
-page:newAction()
-   :setItem('glass_pane')
-   :setHoverColor(0, 0, 0)
-   :onScroll(function (dir, self)
-      target = math.clamp(target + dir * 0.1, 0, 1)
-      self:setColor(target, target, target)
-      self:setHoverColor(target, target, target)
-   end)
-   :onLeftClick(function (self)
-      target = target > 0.5 and 0 or 1
-      self:setColor(target, target, target)
-      self:setHoverColor(target, target, target)
-   end)
+local anims = {
+   animations.model.awa,
+   animations.model.meow,
+}
 
-function events.tick()
-   oldState = state
-   state = math.lerp(state, target, 0.2)
+local animsStates = {}
+
+for i = 1, #anims do
+   local state = 0
+   local oldState = 0
+   local target = 0
+   page:newAction()
+      :setItem('glass_pane')
+      :setTitle(anims[i]:getName())
+      :setHoverColor(0, 0, 0)
+      :onScroll(function (dir, self)
+         target = math.clamp(target + dir * 0.1, 0, 1)
+         self:setColor(target, target, target)
+         self:setHoverColor(target, target, target)
+      end)
+      :onLeftClick(function (self)
+         target = target > 0.5 and 0 or 1
+         self:setColor(target, target, target)
+         self:setHoverColor(target, target, target)
+      end)
+   
+   function events.tick()
+      oldState = state
+      state = math.lerp(state, target, 0.2)
+   end
+
+   animsStates[i] = function(delta)
+      return math.lerp(oldState, state, delta)
+   end
 end
 
 function events.render(delta)
-   local x = math.lerp(oldState, state, delta)
-   animations.model.awa:setPlaying(x > 0.01):blend(x)
-   tail.config.physicsStrength = 1 - x
+   tail.physicsStrength = 1
+   local strength = 1
+   for i, anim in pairs(anims) do
+      local state = animsStates[i](delta)
+      anim:setPlaying(state > 0.01):blend(state)
+      strength = strength * (1 - state)
+   end
+   tail.config.physicsStrength = strength
 end
