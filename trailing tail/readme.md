@@ -35,4 +35,5 @@ Uses `modelPart:partToWorldMatrix()`<br>
 No visible delay <br>
 Doesn't use `WORLD` parent type <br>
 Renders only when player is rendered. Use first person model mod if you want it to render in first person. <br>
-Should run fine under figura default permission level
+Should run fine under figura default permission level <br>
+You can use `physicsStrength` config to control strength of physics, setting it to 0 will disable it
