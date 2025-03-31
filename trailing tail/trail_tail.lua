@@ -9,7 +9,7 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field startDist number[]
 ---@field vels Vector3[]
 ---@field posFunc fun(): pos: Vector3?, dir: Vector3?
----@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number}
+---@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number}
 local trailingTail = {}
 
 -- from figura code snippets
@@ -34,7 +34,8 @@ function lib.new(modelList)
       maxDist = 1.2,
       maxAngle = 30,
       models = modelList,
-      partToWorldDelay = 0.75
+      partToWorldDelay = 0.75,
+      physicsStrength = 1
    }
    -- start part
    local startModel = modelList[1]:getParent():newPart(modelList[1]:getName()..'start')
@@ -92,23 +93,27 @@ function lib.new(modelList)
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local renderPos = pos
+      local tailStartDir = tail.oldDir
       for i = 1, #modelList do
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
-         local dir = (nextPos - pos):normalize()
+         -- local dir = (nextPos - pos):normalize()
+         local dir = math.lerp(tailStartDir, (nextPos - pos):normalize(), tail.config.physicsStrength):normalize() --[[@as Vector3]]
+         if dir:lengthSquared() < 0.1 then dir = vec(0, 0, 1) end -- this one case when dir can be 0 0 0
          
+         -- animation
          local myAnimMat = matrices.mat4()
          myAnimMat = worldRotMat:inverted() * myAnimMat
          myAnimMat:rotate(model:getAnimRot())
          myAnimMat = worldRotMat * myAnimMat
 
          animMat = animMat * myAnimMat
-
+         -- dir
          dir = animMat:applyDir(dir)
          dir = dir:normalize()
-
+         -- rotation
          rotMat:rightMultiply(matrices.rotation3(directionToEular(rotMat:inverted() * dir)))
-
+         -- all matrix stuff
          local mat = matrices.mat4()
          mat:translate(-model:getPivot())
          mat:multiply(rotMat:augmented())
@@ -118,9 +123,8 @@ function lib.new(modelList)
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
          modelList[i]:setMatrix(mat)
-
+         -- store for next part
          renderPos = renderPos + dir * tail.distances[i]
-
          pos = nextPos
       end
    end
