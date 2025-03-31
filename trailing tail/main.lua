@@ -1,25 +1,7 @@
 local trailTail = require('trail_tail')
 
-local tail = trailTail.new({
-   models.model.tail1,
-   models.model.tail1.tail2,
-   models.model.tail1.tail2.tail3,
-   models.model.tail1.tail2.tail3.tail4,
-   models.model.tail1.tail2.tail3.tail4.tail5,
-   models.model.tail1.tail2.tail3.tail4.tail5.tail6,
-   models.model.tail1.tail2.tail3.tail4.tail5.tail6.tail7,
-})
-
--- trailTail.new({
---    models.model.testtail,
---    models.model.testtail.testtail2,
---    models.model.testtail.testtail2.testtail3,
---    models.model.testtail.testtail2.testtail3.testtail4,
---    models.model.testtail.testtail2.testtail3.testtail4.testtail5,
---    models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6,
---    models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6.testtail7,
---    models.model.testtail.testtail2.testtail3.testtail4.testtail5.testtail6.testtail7.testtail8,
--- })
+local tail = trailTail.new(models.model.tail1)
+-- trailTail.new(models.model.testtail)
 
 -- hide legs
 vanilla_model.LEFT_LEG:setVisible(false)
@@ -34,9 +16,9 @@ function events.tick()
    vanilla_model.ELYTRA:setVisible(player:getPose() == 'FALL_FLYING')
 end
 
+-- testing stuff
 local page = action_wheel:newPage()
 action_wheel:setPage(page)
-
 
 local state = 0
 local oldState = 0

@@ -8,6 +8,8 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field distances number[]
 ---@field startDist number[]
 ---@field vels Vector3[]
+---@field modelScale number
+---@field models number
 ---@field posFunc fun(): pos: Vector3?, dir: Vector3?
 ---@field config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number}
 local trailingTail = {}
@@ -22,9 +24,9 @@ local function directionToEular(dirVec)
 end
 
 ---creates new trailing tail
----@param modelList ModelPart[] # all modelparts will be parented to world
+---@param tailModel ModelPart|ModelPart[] # all modelparts will be parented to world
 ---@return auria.trail_tail
-function lib.new(modelList)
+function lib.new(tailModel)
    local tail = {}
    tail.config = {
       bounce = 0.8,
@@ -33,10 +35,23 @@ function lib.new(modelList)
       gravity = vec(0, -0.08, 0),
       maxDist = 1.2,
       maxAngle = 30,
-      models = modelList,
       partToWorldDelay = 0.75,
       physicsStrength = 1
    }
+   -- find model parts
+   local modelList = tailModel
+   if type(tailModel) ~= 'table' then
+      modelList = {}
+      local model = tailModel
+      local name, n = model:getName():match('^(.-)(-?%d*)$')
+      n = tonumber(n) or 1
+      while model do
+         n = n + 1
+         table.insert(modelList, model)
+         model = model[name..n]
+      end
+   end
+   tail.models = modelList
    -- start part
    local startModel = modelList[1]:getParent():newPart(modelList[1]:getName()..'start')
    startModel:setPivot(modelList[1]:getPivot())
@@ -46,6 +61,7 @@ function lib.new(modelList)
    tail.points = {}
    tail.distances = {}
    tail.startPos = vec(0, 0, 0)
+   tail.modelScale = math.playerScale
    -- get distances
    local pivotOffsets = {}
    do
@@ -83,10 +99,16 @@ function lib.new(modelList)
       end
       tail.startPos = toWorld:apply()
       tail.oldDir = toWorld:applyDir(tailDir):normalize()
-   
-      local partToWorldDelay = tail.config.partToWorldDelay
-      local worldRotMat = toWorld:deaugmented():augmented()
 
+      local modelScale = vec(
+         toWorld.c1.xyz:length(),
+         toWorld.c2.xyz:length(),
+         toWorld.c3.xyz:length()
+      )
+      local modelWorldScale = (modelScale.x + modelScale.y + modelScale.z) / 3 * 16
+      tail.modelScale = modelWorldScale
+      
+      local worldRotMat = toWorld:deaugmented():augmented()
       local rotMat = matrices.mat3()
       local fromWorld = toWorld:inverted()
       local animMat = matrices.mat4()
@@ -94,19 +116,18 @@ function lib.new(modelList)
       local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta)
       local renderPos = pos
       local tailStartDir = tail.oldDir
+      local physicsStrength = tail.config.physicsStrength
+      local partToWorldDelay = tail.config.partToWorldDelay * physicsStrength
       for i = 1, #modelList do
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
-         -- local dir = (nextPos - pos):normalize()
          local dir = math.lerp(tailStartDir, (nextPos - pos):normalize(), tail.config.physicsStrength):normalize() --[[@as Vector3]]
          if dir:lengthSquared() < 0.1 then dir = vec(0, 0, 1) end -- this one case when dir can be 0 0 0
-         
          -- animation
          local myAnimMat = matrices.mat4()
          myAnimMat = worldRotMat:inverted() * myAnimMat
          myAnimMat:rotate(model:getAnimRot())
          myAnimMat = worldRotMat * myAnimMat
-
          animMat = animMat * myAnimMat
          -- dir
          dir = animMat:applyDir(dir)
@@ -117,14 +138,14 @@ function lib.new(modelList)
          local mat = matrices.mat4()
          mat:translate(-model:getPivot())
          mat:multiply(rotMat:augmented())
-         mat:scale(1 / 16)
+         mat:scale(modelScale)
          mat:translate(renderPos)
          mat:translate(offset * ( 1 - tail.startDist[i] * partToWorldDelay))
          mat = fromWorld * mat
          mat:translate(pivotOffsets[i])
          modelList[i]:setMatrix(mat)
          -- store for next part
-         renderPos = renderPos + dir * tail.distances[i]
+         renderPos = renderPos + dir * tail.distances[i] * modelWorldScale
          pos = nextPos
       end
    end
@@ -162,43 +183,31 @@ local function movePointWithCollision(pos, newPos)
    return pos
 end
 
-local log = {}
-local m = models:newPart('', 'Hud'):newText(''):outline(true):pos(-2, -2, 0):setLight(15, 15)
-
 ---@overload fun(tail: auria.trail_tail)
 local function tickTail(tail)
    for i, v in pairs(tail.points) do
       tail.oldPoints[i] = v
    end
    
-   log = {}
    tail.points[0] = tail.startPos
-   
    local oldDir = tail.oldDir
    for i, pos in ipairs(tail.points) do
       local previous = tail.points[i - 1]
-      local dist = tail.distances[i]
+      local dist = tail.distances[i] * tail.modelScale
       local maxDist = tail.distances[i] * tail.config.maxDist
       local offset = pos - previous
       local offsetLength = offset:length()
       local dir = offsetLength > 0.01 and offset / offsetLength or vec(0, 0, 1) -- prevent normalized vector being length 0 when its vec(0, 0, 0)
       -- clamp angle
-      table.insert(log, '[ '..i..' ]')
-      table.insert(log, '§c0§7 clamped§f')
       local targetDir = dir
       local angle = math.deg(math.acos(math.clamp(dir:dot(oldDir), -1, 1)))
       local maxAngle = tail.config.maxAngle
       if angle > maxAngle then -- clamp angle
          local rotAxis = oldDir:crossed(dir)
-         log[#log] = '§62§7 clamped§f'
          if rotAxis:lengthSquared() > 0.001 then
-            log[#log] = '§a1§7 clamped§f'
             targetDir = vectors.rotateAroundAxis(math.min(angle, maxAngle) - angle, dir, rotAxis):normalize()
          end
       end
-      table.insert(log, '§e'..tostring(oldDir:crossed(dir))..'§f')
-      table.insert(log, '§6'..tostring(oldDir:crossed(dir):lengthSquared())..'§f')
-      table.insert(log, '§b'..math.floor(angle)..'§f')
       local targetPos = previous + targetDir * dist
       -- clamp distance
       offsetLength = math.min(offsetLength, maxDist)
@@ -206,10 +215,8 @@ local function tickTail(tail)
       -- pull or push to desired length
       local pullPushStrength = offsetLength / dist
       pullPushStrength = math.abs(pullPushStrength - 1)
-      table.insert(log, '§d'..pullPushStrength..'§f')
       pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) * 0.1
       pullPushStrength = math.min(pullPushStrength, 1)
-      table.insert(log, '§d'..pullPushStrength..'§f')
 
       local targetOffset = targetPos - pos
       
@@ -226,8 +233,6 @@ local function tickTail(tail)
 
       oldDir = dir
    end
-
-   m:text(table.concat(log, '\n'))
 end
 
 local lineLib = require('GNLineLib')
@@ -235,7 +240,6 @@ local lines = {} ---@type line[][]
 
 ---@overload fun(tail: auria.trail_tail, delta: number)
 local function renderTail(tail, delta)
-   -- debugPoint(tail.start:partToWorldMatrix():apply())
    -- debug lines
    -- do return end
    for i, posNew in ipairs(tail.points) do
