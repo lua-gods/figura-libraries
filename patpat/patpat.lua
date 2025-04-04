@@ -195,9 +195,9 @@ function pings.patpat(a, b, c)
       pos = blockPos + vec(0.5, 0, 0.5)
       boundingBox = vec(0.8, 0.8, 0.8)
       -- call petpet function
-      local success, cancelTbl = pcall(avatarVars["petpet.playerHead"], myUuid, config.holdFor, blockPos.x, blockPos.y, blockPos.z)
-      if success and cancelTbl then
-         noHearts = cancelTbl[2]
+      local success, returns = pcall(avatarVars["petpet.playerHead"], myUuid, config.holdFor, blockPos.x, blockPos.y, blockPos.z)
+      if success and type(returns[2]) == "boolean" then
+         noHearts = returns[2]
       end
       pattingOutput = callEvent("head", "patting", blockPos)
    else -- entity
@@ -212,9 +212,9 @@ function pings.patpat(a, b, c)
          boundingBox = entity:getBoundingBox()
       end
       -- call petpet function
-      local success, cancelTbl = pcall(avatarVars["petpet"], myUuid, config.holdFor)
-      if success and cancelTbl then
-         noHearts = cancelTbl[2]
+      local success, returns = pcall(avatarVars["petpet"], myUuid, config.holdFor)
+      if success and type(returns[2]) == "boolean" then
+         noHearts = returns[2]
       end
       pattingOutput = callEvent("player", "patting", entity)
    end
