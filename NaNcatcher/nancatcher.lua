@@ -133,6 +133,9 @@ end
 ---@param name string
 ---@return function
 local function wrapFunc(func, name)
+   if type(func) ~= "function" then
+      return func
+   end
    return function(...)
       local input = {...}
       local output = table.pack(func(...))
