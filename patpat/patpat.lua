@@ -61,6 +61,12 @@ local myUuid = avatar:getUUID()
 playerEvents.player = playerEvents -- backwards compatibility
 playerEvents.head = headEvents
 
+---@overload fun(value: any): string
+local function rawtype(value)
+   local success, err = pcall(rawget, value, "")
+   return success and "table" or err:match('table expected, got (%w*)')
+end
+
 local function callEvent(group, eventName, ...)
    local output = {}
    for _, func in ipairs(playerEvents[group]--[[@as table]][eventName]) do
@@ -108,6 +114,8 @@ function events.tick()
 end
 
 avatar:store("petpet", function(uuid, time)
+   assert(rawtype(uuid) == 'string')
+   assert(rawtype(time) == 'number')
    time = math.clamp(time or 0, config.holdFor, 100)
    if not myPatters.player[uuid] then
       callEvent("player", "onPat")
@@ -121,9 +129,11 @@ avatar:store("petpet", function(uuid, time)
 end)
 
 avatar:store("petpet.playerHead", function(uuid, time, x, y, z)
-   if not x or not y or not z then
-      return
-   end
+   assert(rawtype(uuid) == 'string')
+   assert(rawtype(time) == 'number')
+   assert(rawtype(x) == 'number')
+   assert(rawtype(y) == 'number')
+   assert(rawtype(z) == 'number')
    time = math.min(time or config.holdFor, 100)
    local pos = vec(x, y, z)
    local i = tostring(pos)
