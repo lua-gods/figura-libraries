@@ -63,8 +63,8 @@ playerEvents.head = headEvents
 
 ---@overload fun(value: any): string
 local function rawtype(value)
-  local success, err = pcall(rawget, value, "")
-  return success and "table" or err:match('table expected, got (%w*)')
+   local success, err = pcall(rawget, value, "")
+   return success and "table" or err:match('table expected, got (%w*)')
 end
 
 local function callEvent(group, eventName, ...)
@@ -114,34 +114,34 @@ function events.tick()
 end
 
 avatar:store("petpet", function(uuid, time)
-  assert(rawtype(uuid) == 'string')
-  assert(rawtype(time) == 'number')
-  time = math.clamp(time or 0, config.holdFor, 100)
-  if not myPatters.player[uuid] then
-     callEvent("player", "onPat")
-     callEvent("player", "togglePat", true)
-  end
-  myPatters.player[uuid] = time
-  local entity = world.getEntity(uuid)
-  if entity then
-     callEvent("player", "oncePat", entity)
-  end
+   assert(rawtype(uuid) == 'string')
+   assert(rawtype(time) == 'number')
+   time = math.clamp(time or 0, config.holdFor, 100)
+   if not myPatters.player[uuid] then
+      callEvent("player", "onPat")
+      callEvent("player", "togglePat", true)
+   end
+   myPatters.player[uuid] = time
+   local entity = world.getEntity(uuid)
+   if entity then
+      callEvent("player", "oncePat", entity)
+   end
 end)
 
 avatar:store("petpet.playerHead", function(uuid, time, x, y, z)
-  assert(rawtype(uuid) == 'string')
-  assert(rawtype(time) == 'number')
-  assert(rawtype(x) == 'number')
-  assert(rawtype(y) == 'number')
-  assert(rawtype(z) == 'number')
-  time = math.min(time or config.holdFor, 100)
-  local pos = vec(x, y, z)
-  local i = tostring(pos)
-  local patters = myPatters.head[i]
-  if not patters then
-     patters = {}
-     myPatters.head[i] = {list = patters, pos = pos}
-  end
+   assert(rawtype(uuid) == 'string')
+   assert(rawtype(time) == 'number')
+   assert(rawtype(x) == 'number')
+   assert(rawtype(y) == 'number')
+   assert(rawtype(z) == 'number')
+   time = math.min(time or config.holdFor, 100)
+   local pos = vec(x, y, z)
+   local i = tostring(pos)
+   local patters = myPatters.head[i]
+   if not patters then
+      patters = {}
+      myPatters.head[i] = {list = patters, pos = pos}
+   end
 
   if not patters[uuid] then
      callEvent("head", "onPat", pos)
