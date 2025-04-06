@@ -190,6 +190,7 @@ end
 function pings.patpat(a, b, c)
    if not player:isLoaded() then return end
    local avatarVars, pos, boundingBox, pattingOutput
+   local petpetSuccess, noPats, noHearts
    if b then -- block
       -- decrypt position
       local receivedPos = vec(a, b, c)
@@ -204,7 +205,7 @@ function pings.patpat(a, b, c)
       pos = blockPos + vec(0.5, 0, 0.5)
       boundingBox = vec(0.8, 0.8, 0.8)
       -- call petpet function
-      pcall(avatarVars["petpet.playerHead"], myUuid, config.holdFor, blockPos.x, blockPos.y, blockPos.z)
+      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet.playerHead"], myUuid, config.holdFor, blockPos.x, blockPos.y, blockPos.z)
       pattingOutput = callEvent("head", "patting", blockPos)
    else -- entity
       local entity = world.getEntity(unpackUuid(a))
@@ -218,7 +219,7 @@ function pings.patpat(a, b, c)
          boundingBox = entity:getBoundingBox()
       end
       -- call petpet function
-      pcall(avatarVars["petpet"], myUuid, config.holdFor)
+      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet"], myUuid, config.holdFor)
       pattingOutput = callEvent("player", "patting", entity)
    end
    -- cancel patpat particles when returned true in patting event
@@ -228,7 +229,8 @@ function pings.patpat(a, b, c)
       end
    end
    -- spawn particles
-   if avatarVars['patpat.noHearts'] then return end
+   noHearts = petpetSuccess and rawequal(noHearts, true) or avatarVars['patpat.noHearts']
+   if noHearts then return end
    pos = pos - boundingBox.x_z * 0.5 + vec(
       math.random(),
       math.random(),
