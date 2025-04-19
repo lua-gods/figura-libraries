@@ -2,6 +2,16 @@ local trailTail = require('trail_tail')
 
 local tail = trailTail.new(models.model.tail1)
 
+tail.config.collisionOffsets = {
+   [1] = vec(0, -4, 0),
+   [2] = vec(0, -3.5, 0),
+   [3] = vec(0, -3, 0),
+   [4] = vec(0, -2.5, 0),
+   [5] = vec(0, -2, 0),
+   [6] = vec(0, -1.5, 0),
+   [7] = vec(0, -1, 0),
+}
+
 -- hide legs
 vanilla_model.LEFT_LEG:setVisible(false)
 vanilla_model.RIGHT_LEG:setVisible(false)
@@ -44,7 +54,7 @@ for i = 1, #anims do
          self:setColor(target, target, target)
          self:setHoverColor(target, target, target)
       end)
-   
+
    function events.tick()
       oldState = state
       state = math.lerp(state, target, 0.2)
@@ -65,3 +75,5 @@ function events.render(delta)
    end
    tail.config.physicsStrength = strength
 end
+
+return tail

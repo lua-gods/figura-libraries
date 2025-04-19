@@ -1,6 +1,6 @@
 local lib = {}
 local tails = {} ---@type auria.trail_tail[]
----@alias auria.trail_tail.config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number}
+---@alias auria.trail_tail.config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number, collisionOffsets: Vector3[]}
 ---@class auria.trail_tail
 ---@field startPos Vector3
 ---@field oldDir Vector3
@@ -37,7 +37,8 @@ function lib.new(tailModel)
       maxDist = 1.2,
       maxAngle = 30,
       partToWorldDelay = 0.75,
-      physicsStrength = 1
+      physicsStrength = 1,
+      collisionOffsets = {}
    }
    setmetatable(tail, trailingTail)
    -- find model parts
@@ -90,6 +91,7 @@ function lib.new(tailModel)
       tail.points[i] = vec(0, 0, 0)
       tail.oldPoints[i] = vec(0, 0, 0)
       tail.startDist[i] = (i - 1) / (#modelList - 1)
+      tail.config.collisionOffsets[i] = vec(0, 0, 0)
    end
    -- render
    local tailDir = (modelList[2]:getPivot() - modelList[1]:getPivot()):normalize()
@@ -110,7 +112,7 @@ function lib.new(tailModel)
       )
       local modelWorldScale = (modelScale.x + modelScale.y + modelScale.z) / 3 * 16
       tail.modelScale = modelWorldScale
-      
+
       local worldRotMat = toWorld:deaugmented():augmented()
       local worldRotMatInverted = worldRotMat:inverted()
       local rotMat = matrices.mat3()
@@ -163,7 +165,7 @@ end
 
 ---sets config of tail, you can also do tail.config to get config table
 ---@param tbl auria.trail_tail.config
----@return self 
+---@return self
 function trailingTail:setConfig(tbl)
    for i, v in pairs(tbl) do
       self.config[i] = v
@@ -203,10 +205,12 @@ local function tickTail(tail)
    for i, v in pairs(tail.points) do
       tail.oldPoints[i] = v
    end
-   
+
    tail.points[0] = tail.startPos
    local oldDir = tail.oldDir
    for i, pos in ipairs(tail.points) do
+      local collisionOffset = (tail.config.collisionOffsets[i] or vec(0, 0, 0)) / 16
+      pos = pos + collisionOffset
       local previous = tail.points[i - 1]
       local dist = tail.distances[i] * tail.modelScale
       local maxDist = tail.distances[i] * tail.config.maxDist
@@ -234,17 +238,17 @@ local function tickTail(tail)
       pullPushStrength = math.min(pullPushStrength, 1)
 
       local targetOffset = targetPos - pos
-      
+
       tail.vels[i] = tail.vels[i] * (1 - tail.config.stiff)
       tail.vels[i] = tail.vels[i] + targetOffset * pullPushStrength * tail.config.bounce
       tail.vels[i] = tail.vels[i] + tail.config.gravity
       if isPointInWall(pos - vec(0, 0.02, 0)) then
          tail.vels[i] = tail.vels[i] * tail.config.floorFriction
       end
-      
+
       local newPos = pos + tail.vels[i]:clamped(0, 50)
-      
-      tail.points[i] = movePointWithCollision(pos, newPos)
+
+      tail.points[i] = movePointWithCollision(pos, newPos) - collisionOffset
 
       oldDir = dir
    end
