@@ -1,6 +1,6 @@
 local tail = require('main')
 
-local debugRender = true
+local debugRender = false
 
 local hud = models:newPart('debug renderer', 'Hud')
 local whitePixel = textures.whitePixel or textures:newTexture('whitePixel', 1, 1):setPixel(0, 0, 1, 1, 1)
