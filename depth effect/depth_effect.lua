@@ -129,12 +129,13 @@ end
 
 ---removes depth effect
 function depthObj:remove()
-   self.model.midRender = nil
    for i, face in pairs(self.modelFaces) do
       for _, vertexData in pairs(face.vertices) do
          vertexData[1]:setUV(vertexData[3])
       end
    end
+   self.model.midRender = nil
+   appliedDepthEffect[self.model] = nil
 end
 
 return mod
