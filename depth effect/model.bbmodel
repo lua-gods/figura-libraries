@@ -1,0 +1,340 @@
+{
+	"meta": {
+		"format_version": "4.10",
+		"model_format": "free",
+		"box_uv": false
+	},
+	"name": "model",
+	"model_identifier": "",
+	"visible_box": [1, 1, 0],
+	"variable_placeholders": "",
+	"variable_placeholder_buttons": [],
+	"timeline_setups": [],
+	"unhandled_root_fields": {},
+	"resolution": {
+		"width": 16,
+		"height": 16
+	},
+	"elements": [
+		{
+			"name": "bg",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, 0],
+			"to": [8, 25, 0],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, 0],
+			"faces": {
+				"north": {
+					"uv": [0, 0, 16, 16],
+					"texture": 0
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [0, 0, 16, 16],
+					"texture": null
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "9ec55313-959b-0cad-c0f0-0dee47418b62"
+		},
+		{
+			"name": "layer1",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, -0.05],
+			"to": [8, 25, -0.05],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, -0.05],
+			"faces": {
+				"north": {
+					"uv": [0, 0, 32, 32],
+					"texture": 1
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [0, 0, 16, 16],
+					"texture": null
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "93a55eb9-592c-5306-f9f5-0785ac11b76c"
+		},
+		{
+			"name": "layer2",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, -0.1],
+			"to": [8, 25, -0.1],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, -0.1],
+			"faces": {
+				"north": {
+					"uv": [32, 0, 64, 32],
+					"texture": 1
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [0, 0, 16, 16],
+					"texture": null
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "2b0e24eb-9f61-ed70-e142-91fabad56884"
+		},
+		{
+			"name": "layer3",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, -0.1],
+			"to": [8, 25, -0.1],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, -0.1],
+			"faces": {
+				"north": {
+					"uv": [0, 32, 32, 64],
+					"texture": 1
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [0, 0, 16, 16],
+					"texture": null
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "2327f3da-ca8a-9e89-3f5a-b93ad77358d6"
+		},
+		{
+			"name": "layer4",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, -0.15],
+			"to": [8, 25, -0.15],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, -0.15],
+			"faces": {
+				"north": {
+					"uv": [42, 0, 58, 16],
+					"texture": 1
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [0, 0, 16, 16],
+					"texture": null
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "65d403c2-fe12-250d-f1fd-99da81d5b7a1"
+		},
+		{
+			"name": "layer5",
+			"box_uv": false,
+			"rescale": false,
+			"locked": false,
+			"light_emission": 0,
+			"render_order": "default",
+			"allow_mirror_modeling": true,
+			"from": [-8, 9, 0.05],
+			"to": [8, 25, 0.05],
+			"autouv": 0,
+			"color": 9,
+			"origin": [0, 16, 0.05],
+			"faces": {
+				"north": {
+					"uv": [0, 0, 0, 0],
+					"texture": null
+				},
+				"east": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"south": {
+					"uv": [48, 48, 64, 64],
+					"texture": 1
+				},
+				"west": {
+					"uv": [0, 0, 0, 16],
+					"texture": null
+				},
+				"up": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				},
+				"down": {
+					"uv": [0, 0, 16, 0],
+					"texture": null
+				}
+			},
+			"type": "cube",
+			"uuid": "53d85d8c-bbcc-b4ad-cb19-bbacc2ff2934"
+		}
+	],
+	"outliner": [
+		"9ec55313-959b-0cad-c0f0-0dee47418b62",
+		"93a55eb9-592c-5306-f9f5-0785ac11b76c",
+		"2b0e24eb-9f61-ed70-e142-91fabad56884",
+		"2327f3da-ca8a-9e89-3f5a-b93ad77358d6",
+		"65d403c2-fe12-250d-f1fd-99da81d5b7a1",
+		"53d85d8c-bbcc-b4ad-cb19-bbacc2ff2934"
+	],
+	"textures": [
+		{
+			"path": "C:\\Users\\MCPLj\\Desktop\\figura\\avatars\\avatars\\figuraLibraries\\depth effect\\bg.png",
+			"name": "bg.png",
+			"folder": "block",
+			"namespace": "",
+			"id": "0",
+			"group": "",
+			"width": 16,
+			"height": 16,
+			"uv_width": 16,
+			"uv_height": 16,
+			"particle": false,
+			"use_as_default": false,
+			"layers_enabled": false,
+			"sync_to_project": "",
+			"render_mode": "default",
+			"render_sides": "auto",
+			"pbr_channel": "color",
+			"frame_time": 1,
+			"frame_order_type": "loop",
+			"frame_order": "",
+			"frame_interpolate": false,
+			"visible": true,
+			"internal": true,
+			"saved": true,
+			"uuid": "3509b180-7f7f-f96e-405b-f7f35870e809",
+			"relative_path": "bg.png",
+			"source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAB5JREFUOE9jZGBg+M9AAWAcNYBhNAwYRsOAYViEAQBOThABC541RwAAAABJRU5ErkJggg=="
+		},
+		{
+			"path": "C:\\Users\\MCPLj\\Desktop\\figura\\avatars\\avatars\\figuraLibraries\\depth effect\\layer.png",
+			"name": "layer.png",
+			"folder": "block",
+			"namespace": "",
+			"id": "1",
+			"group": "",
+			"width": 64,
+			"height": 64,
+			"uv_width": 64,
+			"uv_height": 64,
+			"particle": false,
+			"use_as_default": false,
+			"layers_enabled": false,
+			"sync_to_project": "",
+			"render_mode": "default",
+			"render_sides": "auto",
+			"pbr_channel": "color",
+			"frame_time": 1,
+			"frame_order_type": "loop",
+			"frame_order": "",
+			"frame_interpolate": false,
+			"visible": true,
+			"internal": true,
+			"saved": true,
+			"uuid": "78ef992a-d66d-573e-6984-b7d38fd4078a",
+			"relative_path": "layer.png",
+			"source": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAqtJREFUeF7tW81SAjEMzl5AZ3T0LB7wAfQF4PHhBfQB5CCedXRG4VKnOOvAsku+tGm7tcuFw4b8fP2StNlSUeGfqvD4aQCgyQDztjDV9TwZMIsPY+aXVTT7B4Zs8HQ1I3pfEgdCCKBs8NMR0WpL5AuCWT+aavLAAnkkgAZmvp5NdX7HGkBrTB38ZES03vqBYIOnm3ui1yfiQBAHsGPJeEJ0NiX6XhFt1ixbpCAkZQDqrDYDartJawAavJVDU0WiM4WsOAVSONm0qcmSLAF42RhzO9ZplZ0AaKJ8tNcAW1Tbyts2qdEpat3RGSBpUV3pViwDQnSKAwbUtLffswui5efvjgxJB0SmDwW06YNKDWgC1sdAu3xSqwG5MKDppwoDclnxtsOWGgP6DkLXYasYAOwCFc2ArhZaFAPa0nQAIHTx6nt7dGYAMg/IYYPkDgA4EwzFAC29YgBCzgRDp6NqEQw1E0RBQBnApaqYAbWDnGI0EImcy2mVWyhnACSOh5DlGICmarYAoKAWywA0Vf89AzimtAKQosDVpzXfl6JcwNBIjMsbqRFEXvPNMGKvdSyOVk7UAFep94+o2vN+1Mf2FAC3uZwRyfy+FwxAKycXuOu7fpQxnP3955zOoF1AwgBJUKgschoNCgCHPhqIjxznQ1AAfByP9dsBAARpjkaIjr7KQAxIXcxCgncSANd2FtJhbd0DAxBEi68BCEioDHqFFdXnKwelgK+Rvy224Aqrlk1OT1QArDMSBsRIvegAcCsS+3mvAQjBAPiKTOyV2B+O1DfTpDfVOJ+zuyChyYDhikyOV2RcGMBNtFVrAGeMy8kQz6UTbecuIPmDVYhAmzpdJ9rOAOw2NYn+YncqNaIxIMaqttngBp3SRfFiQEoQtF6hZQmAJvADAJpo5qjrB8BTCF+PWL4KAAAAAElFTkSuQmCC"
+		}
+	]
+}
