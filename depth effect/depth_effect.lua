@@ -112,6 +112,13 @@ function mod.applyAll(model, depth)
    mod.apply(model, depth)
 end
 
+---returns depth effect obj from modelpart, returns nil if not registered
+---@param model ModelPart
+---@return auria.depth_effect.obj[]
+function mod.get(model)
+   return appliedDepthEffect[model]
+end
+
 ---sets depth
 ---@param depth number
 ---@return self
