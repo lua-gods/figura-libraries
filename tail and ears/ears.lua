@@ -11,6 +11,7 @@ local oldPlayerRot
 ---creates new ears physics
 ---@param leftEar ModelPart
 ---@param rightEar ModelPart
+---@return auria.earsPhysics
 function earsPhysics.new(leftEar, rightEar)
    local obj = setmetatable({}, ears)
    obj.config = { -- default config, please use ears:setConfig to set config, dont edit this table

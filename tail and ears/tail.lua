@@ -12,6 +12,7 @@ tail.__index = tail
 
 ---creates new tail physics
 ---@param model ModelPart|ModelPart[]
+---@return auria.tailPhysics
 function tailPhysics.new(model)
    local obj = setmetatable({}, tail)
    obj.config = { -- default config
