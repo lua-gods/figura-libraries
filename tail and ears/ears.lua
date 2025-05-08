@@ -1,6 +1,6 @@
 local earsPhysics = {} -- made by Auriafoxgirl
 ---@class auria.earsPhysics
----@field config table
+---@field config auria.earsPhysics.config
 ---@field leftEar ModelPart
 ---@field rightEar ModelPart
 local ears = {}
@@ -14,15 +14,19 @@ local oldPlayerRot
 ---@return auria.earsPhysics
 function earsPhysics.new(leftEar, rightEar)
    local obj = setmetatable({}, ears)
+   ---@class (partial) auria.earsPhysics.config
    obj.config = { -- default config, please use ears:setConfig to set config, dont edit this table
-      velocityStrength = 1, -- velocity strength, can also be Vector3
+      ---@type number|Vector3
+      velocityStrength = 1, -- velocity strength
       headRotStrength = 0.4, -- how much ears should rotate when head moved up or down
 
       bounce = 0.2, -- how bouncy ears are
       stiff = 0.3, -- how stiff ears are
-   
+
       extraAngle = 15, -- rotates ears by this angle when crouching
+      ---@type {[any]: boolean}
       useExtraAngle = {}, -- if any of variables in this table is true extraAngle will be used even when not crouching
+      ---@type {[any]: number}
       addAngle = {}, -- adds angle to ear rotation
 
       earsFlick = true, -- set if ears should flick
@@ -50,7 +54,7 @@ function earsPhysics.new(leftEar, rightEar)
 end
 
 ---merge new config with current config, returns self for chaining
----@param tbl table
+---@param tbl auria.earsPhysics.config
 ---@return self
 function ears:setConfig(tbl)
    for i, v in pairs(tbl) do

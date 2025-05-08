@@ -1,6 +1,6 @@
 local tailPhysics = {} -- made by Auriafoxgirl
 ---@class auria.tailPhysics
----@field config table
+---@field config auria.tailPhysics.config
 ---@field model ModelPart
 ---@field wagTime Vector3
 ---@field oldWagTime Vector3
@@ -15,20 +15,24 @@ tail.__index = tail
 ---@return auria.tailPhysics
 function tailPhysics.new(model)
    local obj = setmetatable({}, tail)
+   ---@class (partial) auria.tailPhysics.config
    obj.config = { -- default config
       velocityStrength = vec(1, 1, 1), -- left right, up down, forward backward
-   
+
       rotVelocityStrength = 1,
       rotVelocityLimit = 10,
-   
+
       verticalVelocityMin = -5,
       verticalVelocityMax = 2,
-   
-      bounce = 0.1, -- how bouncy tail will be, can also be vector 4
-      stiff = 0.18, -- how stiff should tail be, can also be vector 4
+
+      ---@type number|Vector4
+      bounce = 0.1, -- how bouncy tail will be
+      ---@type number|Vector4
+      stiff = 0.18, -- how stiff should tail be
+      ---@type number|Vector4
       waterStiff = 0.5, -- how stiff should tail be underwater
       waterStrength = 0.5, -- how much water will affect tail
-   
+
       idleSpeed = vec(0, 0, 0), -- how fast should tail move when nothing is happening
       idleStrength = vec(0, 0, 0), -- how much should tail move
       walkSpeed = vec(0, 0.5, 0), -- how much faster should tail move when walking
@@ -36,12 +40,14 @@ function tailPhysics.new(model)
       walkLimit = 0.31, -- maximum speed that will be used for walkSpeed, set it to 0 to disable
       wagSpeed = vec(0, 0.6, 0), -- how fast tail moves when wagging with tail
       wagStrength = vec(1, 12, 0), -- how much it should move
+      ---@type {[any]: boolean}
       enableWag = {}, -- if any variable in this table is true tail will wag
-   
+
       tailOffset = 0.5, -- offset for wag or something
       tailDelay = 6, -- amount of ticks last tail part will be delayed from first one
-   
+
       -- table containing functions with argument rot that is table of vector 4 (default 0, 0, 0, 1) that controls tail rotation, returning true will stop physics, can be used for sleeping animation
+      ---@type (fun(rot: Vector4[]): boolean)[]
       rotOverride = {}
    }
    -- model
@@ -81,7 +87,7 @@ function tailPhysics.new(model)
 end
 
 ---merge new config with current config, returns self for chaining
----@param tbl table
+---@param tbl auria.tailPhysics.config
 ---@return self
 function tail:setConfig(tbl)
    for i, v in pairs(tbl) do
