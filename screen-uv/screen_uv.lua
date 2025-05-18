@@ -10,6 +10,8 @@ local vectors_toCameraSpace = vectors.toCameraSpace
 local vectors_worldToScreenSpace = vectors.worldToScreenSpace
 local math_max = math.max
 
+local compat1_21 = 0 -- compat for 1.21.1+ evctors.toCameraSpace is inverted
+
 ---@type {[ModelPart]: auria.screen_uv.obj}
 local appliedEffect = {}
 
@@ -39,6 +41,12 @@ local function midRender(delta, ctx, model)
    local camPos = client.getCameraPos()
    local camDir = client.getCameraDir()
 
+   if compat1_21 == 0 then
+      local point = camPos + camDir
+      local depth1 = vectors_toCameraSpace(point).z
+      compat1_21 = depth1 > 0 and 1 or -1
+   end
+
    for i, face in pairs(me.modelFaces) do
       local depth = 0
       local textureSize = face.textureSize
@@ -46,7 +54,7 @@ local function midRender(delta, ctx, model)
 
       for _, vertexData in pairs(face.vertices) do
          vertexData[4] = toWorldMat:apply(vertexData[2])
-         vertexData[5] = vectors_toCameraSpace(vertexData[4]).z
+         vertexData[5] = vectors_toCameraSpace(vertexData[4]).z * compat1_21
          depth = depth + vertexData[5]
          if vertexData[5] < 0 then -- behind camera, ignore
             onScreen = false
