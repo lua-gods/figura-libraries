@@ -1,40 +1,41 @@
 -- variables
 local lib = {}
 
----@class AuriaEvent
-local eventMetatable = {__type = "Event", __index = {}}
-local eventsMetatable = {__index = {}}
-eventMetatable.__index = eventMetatable
+---@class auria.event
+local eventMt = {__type = "Event"}
+eventMt.__index = eventMt
+local eventsTblMt = {__index = {}}
 
----@return AuriaEvent
-function lib.new()
-   return setmetatable({_registered = {}}, eventMetatable)
-end
----@return AuriaEvent
+---creates event
+---@return auria.event
 function lib.newEvent()
-   return setmetatable({_registered = {}}, eventMetatable)
+   return setmetatable({_registered = {}}, eventMt)
 end
+lib.new = lib.newEvent
 
+---makes table allow registering new events by adding functions to it
+---@param tbl table?
+---@return table
 function lib.table(tbl)
-   return setmetatable({_table = tbl or {}}, eventsMetatable)
+   return setmetatable({_table = tbl or {}}, eventsTblMt)
 end
 
 ---Registers an event
 ---@param func function
 ---@param name string?
-function eventMetatable:register(func, name)
+function eventMt:register(func, name)
    table.insert(self._registered, {func = func, name = name})
 end
 
 ---Clears all event
-function eventMetatable:clear()
+function eventMt:clear()
    self._registered = {}
 end
 
 ---Removes an event with the given name.
 ---@param match string
 ---@return integer
-function eventMetatable:remove(match)
+function eventMt:remove(match)
    local count = 0
    for i = #self._registered, 1, -1 do
       local tbl = self._registered[i]
@@ -49,7 +50,7 @@ end
 ---Returns how much listerners there are.
 ---@param name string
 ---@return integer
-function eventMetatable:getRegisteredCount(name)
+function eventMt:getRegisteredCount(name)
    local count = 0
    for _, data in pairs(self._registered) do
       if data.name == name then
@@ -59,7 +60,7 @@ function eventMetatable:getRegisteredCount(name)
    return count
 end
 
-function eventMetatable:__call(...)
+function eventMt:__call(...)
    local returnValue = {}
    for _, data in pairs(self._registered) do
       table.insert(returnValue, {data.func(...)})
@@ -67,7 +68,7 @@ function eventMetatable:__call(...)
    return returnValue
 end
 
-function eventMetatable:invoke(...)
+function eventMt:invoke(...)
    local returnValue = {}
    for _, data in pairs(self._registered) do
       table.insert(returnValue, {data.func(...)})
@@ -75,27 +76,27 @@ function eventMetatable:invoke(...)
    return returnValue
 end
 
-function eventMetatable:__len()
+function eventMt:__len()
    return #self._registered
 end
 
 -- events table
-function eventsMetatable.__index(t, i)
-   return t._table[i] or (type(i) == "string" and getmetatable(t._table[i:upper()]) == eventMetatable) and t._table[i:upper()] or nil
+function eventsTblMt.__index(t, i)
+   return t._table[i] or (type(i) == "string" and type(t._table[i:upper()]) == 'Event' and t._table[i:upper()] or nil)
 end
 
-function eventsMetatable.__newindex(t, i, v)
-   if type(i) == "string" and type(v) == "function" and t._table[i:upper()] and getmetatable(t._table[i:upper()]) == eventMetatable then
+function eventsTblMt.__newindex(t, i, v)
+   if type(i) == "string" and type(v) == "function" and t._table[i:upper()] and type(t._table[i:upper()]) == 'Event' then
       t._table[i:upper()]:register(v)
    else
       t._table[i] = v
    end
 end
 
-function eventsMetatable.__ipairs(t)
+function eventsTblMt.__ipairs(t)
    return ipairs(t._table)
 end
-function eventsMetatable.__pairs(t)
+function eventsTblMt.__pairs(t)
    return pairs(t._table)
 end
 
