@@ -106,9 +106,8 @@ function lineClass:free()
 end
 
 -- modified version of screen to world space made by GNamimates, used to get fov
-local function screenToWorldSpace(distance, pos, fov)
+local function screenToWorldSpace(distance, pos, fov, rot)
    local mat = matrices.mat4()
-   local rot = client:getCameraRot()
    local win_size = client:getWindowSize()
    local mpos = (pos / win_size - vec(0.5, 0.5)) * vec(win_size.x/win_size.y,1)
    if renderer:getCameraMatrix() then mat:multiply(renderer:getCameraMatrix()) end
@@ -119,9 +118,9 @@ local function screenToWorldSpace(distance, pos, fov)
    return pos
 end
 
-local function getRealFov()
+local function getRealFov(cameraRot)
    local fov = math.tan(math.rad(client.getFOV() / 2)) * 2
-   local pos = vectors.worldToScreenSpace(screenToWorldSpace(1, vec(0, 0), fov)).xy
+   local pos = vectors.worldToScreenSpace(screenToWorldSpace(1, vec(0, 0), fov, cameraRot)).xy
    local fovErr =  vec(-1, -1):length() / pos:length()
    return fov * fovErr
 end
@@ -131,6 +130,17 @@ lineWorld.preRender = function()
    -- check if updating is needed
    local camPos = client.getCameraPos()
    local camRot = client.getCameraRot()
+   if math.abs(math.abs(camRot.x) - 90) < 0.1 then -- fix for figura bug
+      camRot.z = 0
+      local pos = vectors.worldToScreenSpace(camPos + vec(1, 0, 0) + client.getCameraDir())
+      pos.xy = pos.xy * client.getScaledWindowSize() -- aspect ratio fix
+      local rot = math.deg(math.atan2(pos.x, pos.y))
+      rot = rot + 90
+      if camRot.x < 0 then
+         rot = -rot
+      end
+      camRot.y = rot
+   end
    if not forceUpdate and camPos == oldCamPos and camRot == oldCamRot then
       return
    end
@@ -139,7 +149,7 @@ lineWorld.preRender = function()
    forceUpdate = false
    -- variables
    local windowSize = client.getScaledWindowSize()
-   local fov = getRealFov()
+   local fov = getRealFov(camRot)
    local aspectRatio = windowSize.x / windowSize.y
    -- decide resolution
    local textureSize = vec(gridRes, gridRes)
