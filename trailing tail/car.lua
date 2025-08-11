@@ -21,6 +21,14 @@ for _, v in pairs(keys) do
    end
 end
 
+local carModel = models:newPart('carModel', 'World')
+local carIconGroup = carModel:newPart('', 'Camera')
+local carIcon = carIconGroup:newText('')
+carIcon:setText(':racecar:')
+carModel:visible(false)
+carIcon:setPos(4, 6, 0)
+carIconGroup:setPivot(0, 2, 0)
+
 keybinds:of("car", "key.keyboard.grave.accent").press = function()
    if not player:isLoaded() then return end
    enabled = not enabled
@@ -29,6 +37,7 @@ keybinds:of("car", "key.keyboard.grave.accent").press = function()
    vel = vec(0, 0, 0)
    renderer:setCameraPivot()
    renderer:setCameraRot()
+   carModel:visible(false)
 end
 
 ---@overload fun(Pos: Vector3): Vector3?
@@ -48,7 +57,7 @@ function events.tick()
    oldRot = rot
    rot = rot % 360
 
-   local onGround = isPointInWall(pos - vec(0, 0.01, 0))
+   local onGround = isPointInWall(pos - vec(0, 0.05, 0))
 
    vel = vectors.rotateAroundAxis(90 + rot, vel, vec(0, 1, 0))
    if onGround then vel.y = 0 end
@@ -92,6 +101,8 @@ end
 
 function events.world_render(delta)
    if not enabled then return end
-   renderer:setCameraPivot(math.lerp(oldPos, pos, delta) + vec(0, 0.2, 0))
+   renderer:setCameraPivot(math.lerp(oldPos, pos, delta) + vec(0, 0.4, 0))
    renderer:setCameraRot(0, math.lerpAngle(oldRot, rot, delta), 0)
+   carModel:setPos(math.lerp(oldPos, pos, delta) * 16)
+   carModel:setVisible(not renderer:isFirstPerson())
 end
