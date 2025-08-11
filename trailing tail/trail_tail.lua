@@ -25,7 +25,7 @@ local function directionToEular(dirVec)
 end
 
 ---creates new trailing tail
----@param tailModel ModelPart|ModelPart[] # all modelparts will be parented to world
+---@param tailModel ModelPart|ModelPart[]
 ---@return auria.trail_tail
 function lib.new(tailModel)
    local tail = {}
