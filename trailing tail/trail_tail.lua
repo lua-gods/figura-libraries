@@ -42,8 +42,12 @@ function lib.new(tailModel)
    }
    setmetatable(tail, trailingTail)
    -- find model parts
+   local modelVarType = type(tailModel)
+   if modelVarType ~= 'ModelPart' and modelVarType ~= 'table' then
+      error('bad argument: ModelPart or table expected, got '..modelVarType, 2)
+   end
    local modelList = tailModel
-   if type(tailModel) ~= 'table' then
+   if modelVarType == 'ModelPart' then
       modelList = {}
       local model = tailModel
       local name, n = model:getName():match('^(.-)(-?%d*)$')
@@ -55,6 +59,9 @@ function lib.new(tailModel)
       end
    end
    tail.models = modelList
+   if #tail.models <= 1 then
+      error('at least 2 model parts expected, got '..#tail.models, 2)
+   end
    -- start part
    local startModel = modelList[1]:getParent():newPart(modelList[1]:getName())
    startModel:setPivot(modelList[1]:getPivot())
