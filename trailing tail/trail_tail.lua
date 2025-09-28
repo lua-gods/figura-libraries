@@ -15,13 +15,46 @@ local tails = {} ---@type auria.trail_tail[]
 local trailingTail = {}
 trailingTail.__index = trailingTail
 
--- from figura code snippets
+---snippet by @kitcat962
 ---@param dirVec Vector3
 ---@return Vector3
 local function directionToEular(dirVec)
    local yaw = math.atan2(dirVec.x, dirVec.z)
    local pitch = math.atan2(dirVec.y, dirVec.xz:length())
    return vec(-math.deg(pitch), math.deg(yaw), 0)
+end
+
+---snippet by @PenguinEncounter
+---@param mat Matrix4|Matrix3
+---@return Vector3
+local function mat2eulerZYX(mat)
+	---@type number, number, number
+	local x, y, z
+	local query = mat.v31 -- are we in Gimbal Lock?
+	if math.abs(query) < 0.9999 then
+		y = math.asin(-mat.v31)
+		z = math.atan2(mat.v21, mat.v11)
+		x = math.atan2(mat.v32, mat.v33)
+	elseif query < 0 then -- approx -1, gimbal lock
+		y = math.pi / 2
+		z = -math.atan2(-mat.v23, mat.v22)
+		x = 0
+	else -- approx 1, gimbal lock
+		y = -math.pi / 2
+		z = math.atan2(-mat.v23, mat.v22)
+		x = 0
+	end
+	return vec(x, y, z):toDeg()
+end
+
+---@param v Vector3
+---@return Vector3
+local function invertVec3(v)
+   return vec(
+      v.x == 0 and 0.0001 or 1 / v.x,
+      v.y == 0 and 0.0001 or 1 / v.y,
+      v.z == 0 and 0.0001 or 1 / v.z
+   )
 end
 
 ---creates new trailing tail
@@ -122,7 +155,8 @@ function lib.new(tailModel)
 
       local worldRotMat = toWorld:deaugmented():augmented()
       local worldRotMatInverted = worldRotMat:inverted()
-      local rotMat = matrices.mat3()
+      local rotMat = toWorld:copy():scale(invertVec3(modelScale))
+      rotMat = matrices.rotation3(mat2eulerZYX(rotMat))
       local fromWorld = toWorld:inverted()
       local animMat = matrices.mat4()
       local offset = tail.startPos - math.lerp(tail.oldPoints[0], tail.points[0], delta)
