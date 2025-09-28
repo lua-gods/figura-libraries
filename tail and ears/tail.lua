@@ -6,6 +6,7 @@ local tailPhysics = {} -- made by Auriafoxgirl
 ---@field oldWagTime Vector3
 ---@field wagStrength Vector3
 ---@field oldWagStrength Vector3
+---@field tailY number
 local tail = {}
 local updatingTails = {}
 tail.__index = tail
@@ -14,6 +15,12 @@ tail.__index = tail
 ---@param model ModelPart|ModelPart[]
 ---@return auria.tailPhysics
 function tailPhysics.new(model)
+   -- check types
+   local modelVarType = type(model)
+   if modelVarType ~= 'ModelPart' and modelVarType ~= 'table' then
+      error('bad argument: ModelPart or table expected, got '..modelVarType, 2)
+   end
+   -- 
    local obj = setmetatable({}, tail)
    ---@class (partial) auria.tailPhysics.config
    obj.config = { -- default config
@@ -32,6 +39,9 @@ function tailPhysics.new(model)
       ---@type number|Vector4
       waterStiff = 0.5, -- how stiff should tail be underwater
       waterStrength = 0.5, -- how much water will affect tail
+
+      extraMovingStiff = 0.15, -- extra stiff when moving
+      movingStiffStrength = 20,
 
       idleSpeed = vec(0, 0, 0), -- how fast should tail move when nothing is happening
       idleStrength = vec(0, 0, 0), -- how much should tail move
@@ -109,6 +119,11 @@ function tail:remove()
    updatingTails[self] = nil
 end
 
+---@overload fun(v: number): number
+local function min1(v)
+   return v > 1 and 1 or v
+end
+
 local function getPartRot(self, i, delta, time, strength)
    local k = math.floor((i - 1) / #self.parts * self.tailDelay) + 1
    local r = math.lerp(self.oldRot[k], self.rot[k], delta or 1)
@@ -124,6 +139,7 @@ function tail:getPartRot(partId, delta)
    return getPartRot(self, partId, delta, time, strength)
 end
 
+---@overload fun(pos: Vector3): number
 local function getUnderwaterlevel(pos)
    local y = -1
    for i = -1, 2 do
@@ -136,6 +152,7 @@ local function getUnderwaterlevel(pos)
    return y
 end
 
+---@overload fun(obj: auria.tailPhysics, playerVelRaw: Vector3, bodyVel: number, waterStrength: number, baseWagWalkSpeed: number)
 local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSpeed)
    -- update tail delay if changed
    if obj.tailDelay ~= obj.config.tailDelay then
@@ -164,7 +181,7 @@ local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSp
       end
    end
    -- get velocity
-   bodyVel = math.clamp(bodyVel * obj.config.rotVelocityStrength * 0.2, -obj.config.rotVelocityLimit, obj.config.rotVelocityLimit)
+   bodyVel = math.clamp(bodyVel * obj.config.rotVelocityStrength * 0.1, -obj.config.rotVelocityLimit, obj.config.rotVelocityLimit)
    local wagWalkSpeed = obj.config.walkLimit == 0 and 0 or math.clamp(playerVelRaw.z * obj.config.velocityStrength.z / obj.config.walkLimit * baseWagWalkSpeed, 0, 1)
    local playerVel = playerVelRaw * obj.config.velocityStrength
    -- water level
@@ -172,13 +189,22 @@ local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSp
    local waterLevel = getUnderwaterlevel(tailPos)
    local inWater = math.clamp(waterLevel + 0.5, 0, 1) * obj.config.waterStrength * waterStrength
    -- apply velocity
-   obj.vel = obj.vel * (1 - math.lerp(obj.config.stiff, obj.config.waterStiff, inWater))
+   local acc = vec(
+      math.clamp(playerVel.y * 2 - inWater * 4, obj.config.verticalVelocityMin, obj.config.verticalVelocityMax),
+      bodyVel * math.max(1 - math.abs(playerVelRaw.x) * 6, 0) + math.clamp(playerVel.x, -2, 2),
+      0,
+      math.clamp(playerVel.z * 0.6 + math.abs(bodyVel) * 0.02 + inWater * 0.25 - playerVel.y * 0.12, 0, 1) * -obj.rot[1].w
+   )
+   local stiffRaw = math.lerp(obj.config.stiff, obj.config.waterStiff, inWater) + vec(0, 0, 0, 0)
+   local stiff = 1 - math.lerp(
+      stiffRaw,
+      (stiffRaw + obj.config.extraMovingStiff):applyFunc(min1),
+      (acc * obj.config.movingStiffStrength):applyFunc(math.abs):applyFunc(min1)
+   )
+   obj.vel = obj.vel * stiff
    obj.vel = obj.vel + (vec(0, 0, 0, 1) - obj.rot[1]) * obj.config.bounce
+   obj.vel = obj.vel + acc
    obj.rot[1] = obj.rot[1] + obj.vel
-
-   obj.rot[1].x = obj.rot[1].x + math.clamp(playerVel.y * 5 - inWater * 4, obj.config.verticalVelocityMin, obj.config.verticalVelocityMax)
-   obj.rot[1].y = obj.rot[1].y + bodyVel * math.max(1 - math.abs(playerVelRaw.x) * 4, 0) + math.clamp(playerVel.x * 20, -2, 2)
-   obj.rot[1].w = obj.rot[1].w * math.clamp(1 - playerVel.z - math.abs(bodyVel) * 0.02 + playerVel.y * 0.25 - inWater * 0.25, 0, 1)
 
    -- wag
    local targetWagSpeed = math.lerp(obj.config.idleSpeed, obj.config.walkSpeed, wagWalkSpeed)
@@ -191,7 +217,7 @@ local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSp
       end
    end
    obj.wagSpeed = math.lerp(obj.wagSpeed, targetWagSpeed, 0.15)
-   obj.wagStrength = math.lerp(obj.wagStrength, targetWagStrength, 0.15)
+   obj.wagStrength = math.lerp(obj.wagStrength, targetWagStrength, 0.15) --[[@as Vector3]]
    obj.wagTime = obj.wagTime + obj.wagSpeed * (1 - inWater * 0.25)
 end
 

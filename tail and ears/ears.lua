@@ -13,6 +13,14 @@ local oldPlayerRot
 ---@param rightEar ModelPart
 ---@return auria.earsPhysics
 function earsPhysics.new(leftEar, rightEar)
+   -- check types
+   if type(leftEar) ~= 'ModelPart' then
+      error('bad argument: ModelPart expected, got '..type(leftEar), 2)
+   end
+   if type(rightEar) ~= 'ModelPart' then
+      error('bad argument: ModelPart expected, got '..type(rightEar), 2)
+   end
+   --
    local obj = setmetatable({}, ears)
    ---@class (partial) auria.earsPhysics.config
    obj.config = { -- default config, please use ears:setConfig to set config, dont edit this table
@@ -22,6 +30,8 @@ function earsPhysics.new(leftEar, rightEar)
 
       bounce = 0.2, -- how bouncy ears are
       stiff = 0.3, -- how stiff ears are
+      extraMovingStiff = 0.2, -- extra stiff when moving
+      movingStiffStrength = 0.25,
 
       extraAngle = 15, -- rotates ears by this angle when crouching
       ---@type {[any]: boolean}
@@ -34,11 +44,13 @@ function earsPhysics.new(leftEar, rightEar)
       flickDelay = 40, -- minimum delay between ear flicks
       flickStrength = 30, -- how much ears should flick
 
-      rotMin = vec(-12, -8, -4), -- rotation limit
-      rotMax = vec(12, 8, 6), -- rotation limit
+      rotMin = vec(-12, -10, -4), -- rotation limit
+      rotMax = vec(12, 10, 6), -- rotation limit
 
       headRotMin = -90, -- minimum rotation for head rotation
       headRotMax = 90, -- maximum rotation for head rotation
+
+      extraYRot = 0,
    }
    -- model
    obj.leftEar = leftEar
@@ -81,6 +93,7 @@ function ears:remove(keepRot)
    updatingEars[self] = nil
 end
 
+---@overload fun(obj: auria.earsPhysics, playerVel: Vector3, playerRotVel: Vector2, isCrouching: boolean, playerRot: Vector2)
 local function tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot)
    -- set oldRot
    obj.oldRot = obj.rot
@@ -106,19 +119,25 @@ local function tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot)
       -targetRotZW
    )
    -- player velocity
-   playerVel = playerVel * obj.config.velocityStrength * 60
+   playerVel = playerVel * obj.config.velocityStrength * 20
    playerRotVel = playerRotVel * obj.config.velocityStrength
-   local finalVel = vec(
+   local clampedVel = vec(
       math.clamp(playerVel.z + playerRotVel.x, obj.config.rotMin.x, obj.config.rotMax.x),
       math.clamp(playerVel.x, obj.config.rotMin.y, obj.config.rotMax.y),
       math.clamp(playerVel.y * 0.25, obj.config.rotMin.z, obj.config.rotMax.z)
    )
+   local acc = vec(clampedVel.x, -clampedVel.y * obj.config.extraYRot, -clampedVel.y + clampedVel.z, -clampedVel.y - clampedVel.z)
    -- update velocity and rotation
-   obj.vel = obj.vel * (1 - obj.config.stiff) + (targetRot - obj.rot) * obj.config.bounce
+   local stiff = 1 - math.lerp(
+      obj.config.stiff,
+      math.min(obj.config.stiff + obj.config.extraMovingStiff, 1),
+      (acc * obj.config.movingStiffStrength):applyFunc(math.abs):applyFunc(function(v) return v > 1 and 1 or v end)
+   )
+   obj.vel = obj.vel * stiff + (targetRot - obj.rot) * obj.config.bounce
+
+   obj.vel = obj.vel + acc
+
    obj.rot = obj.rot + obj.vel
-   obj.rot.x = obj.rot.x + finalVel.x
-   obj.rot.z = obj.rot.z - finalVel.y + finalVel.z
-   obj.rot.w = obj.rot.w - finalVel.y - finalVel.z
    -- ears flick
    obj.flickTime = math.max(obj.flickTime - 1, 0)
    obj.flickTime = math.max(obj.flickTime - 1, 0)
