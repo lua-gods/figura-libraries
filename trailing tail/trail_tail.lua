@@ -250,7 +250,7 @@ local function movePointWithCollision(pos, newPos)
    end
    local push = isPointInWall(pos)
    if push then
-      pos = pos + push:normalize() * 0.01
+      pos = pos + push:normalize() * 0.1
    end
    return pos
 end
@@ -295,7 +295,7 @@ local function tickTail(tail)
       local pullPushStrength = offsetLength / dist
       -- tail.models[i]:setColor(math.lerp(vec(1, 1, 1), pullPushStrength > 1 and vec(1, 0, 0) or vec(0, 1, 0), math.abs(pullPushStrength - 1)))
       pullPushStrength = math.abs((pullPushStrength - 1) * 0.5)
-      pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) * 0.2
+      pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) ^ 2 * 0.2
       pullPushStrength = math.min(pullPushStrength, 1)
       -- clamp distance
       offsetLength = math.min(offsetLength, maxDist)
