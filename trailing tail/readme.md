@@ -30,10 +30,13 @@ Or you can edit config table directly
 tail.config.physicsStrength = 0.5
 ```
 
-## Extra info
+## probably useful info
+`tail.config.physicsStrength` - controls strength of physics, setting it to 0 will disable it
+`tail.config.maxDistanceFix` - set to true to fix tail colliding with ground too early
+
+## random info
 Uses `modelPart:partToWorldMatrix()`<br>
 No visible delay <br>
 Doesn't use `WORLD` parent type <br>
 Renders only when player is rendered. Use first person model mod if you want it to render in first person. <br>
-Should run fine under figura default permission level <br>
-You can use `physicsStrength` config to control strength of physics, setting it to 0 will disable it
+Should run fine under figura default permission level for tails with less parts <br>

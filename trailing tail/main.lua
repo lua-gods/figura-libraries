@@ -80,6 +80,10 @@ local tailList = {tail}
 
 if models.model.testtail:getVisible() then
    local testTail = trailTail.new(models.model.testtail)
+   testTail:setConfig({
+      maxDistanceFix = true,
+      maxAngle = 15,
+   })
    table.insert(tailList, testTail)
 end
 

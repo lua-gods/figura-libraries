@@ -1,6 +1,5 @@
 local lib = {}
 local tails = {} ---@type auria.trail_tail[]
----@alias auria.trail_tail.config {stiff: number, bounce: number, floorFriction: number, gravity: Vector3, maxDist: number, maxAngle: number, partToWorldDelay: number, physicsStrength: number, collisionOffsets: Vector3[]}
 ---@class auria.trail_tail
 ---@field startPos Vector3
 ---@field oldDir Vector3
@@ -66,6 +65,7 @@ end
 ---@return auria.trail_tail
 function lib.new(tailModel)
    local tail = {}
+   ---@class (partial) auria.trail_tail.config
    tail.config = {
       bounce = 0.8,
       stiff = 0.5,
@@ -75,7 +75,9 @@ function lib.new(tailModel)
       maxAngle = 30,
       partToWorldDelay = 0.75,
       partToWorldDelayMin = 0,
-      physicsStrength = 1,
+      physicsStrength = 1, -- controls strength of physics, setting it to 0 will disable it
+      maxDistanceFix = false, -- fixes tail colliding too early (default false)
+      ---@type Vector3[]
       collisionOffsets = {}
    }
    setmetatable(tail, trailingTail)
@@ -276,10 +278,10 @@ local function tickTail(tail)
       pos = pos + collisionOffset
       local previous = tail.points[i - 1]
       local dist = tail.distances[i] * tail.modelScale
-      local maxDist = tail.distances[i] * tail.config.maxDist
+      local maxDist = dist * tail.config.maxDist
       local offset = pos - previous
       local offsetLength = offset:length()
-      local dir = offsetLength > 0.01 and offset / offsetLength or vec(0, 0, 1) -- prevent normalized vector being length 0 when its vec(0, 0, 0)
+      local dir = offsetLength > 0.0001 and offset / offsetLength or vec(0, 0, 1) -- prevent normalized vector being length 0 when its vec(0, 0, 0)
       -- clamp angle
       local targetDir = dir
       local angle = math.deg(math.acos(math.clamp(dir:dot(oldDir), -1, 1)))
@@ -313,6 +315,16 @@ local function tickTail(tail)
       local newPos = pos + tail.vels[i]:clamped(0, 50)
 
       pos = movePointWithCollision(pos, newPos)
+
+      if tail.config.maxDistanceFix then
+         offset = pos - previous
+         offsetLength = offset:length()
+         if offsetLength > maxDist then
+            dir = offsetLength > 0.0001 and offset / offsetLength or vec(0, 0, 1)
+            local target = previous + dir * dist
+            pos = movePointWithCollision(pos, target)
+         end
+      end
 
       tail.points[i] = pos - collisionOffset
 
