@@ -30,11 +30,11 @@ Or you can edit config table directly
 tail.config.physicsStrength = 0.5
 ```
 
-## probably useful info
-`tail.config.physicsStrength` - controls strength of physics, setting it to 0 will disable it
+## Probably useful info
+`tail.config.physicsStrength` - controls strength of physics, setting it to 0 will disable it <br>
 `tail.config.maxDistanceFix` - set to true to fix tail colliding with ground too early
 
-## random info
+## Random info
 Uses `modelPart:partToWorldMatrix()`<br>
 No visible delay <br>
 Doesn't use `WORLD` parent type <br>
