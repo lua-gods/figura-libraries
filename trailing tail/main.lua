@@ -76,8 +76,11 @@ function events.render(delta)
    tail.config.physicsStrength = strength
 end
 
+local tailList = {tail}
+
 if models.model.testtail:getVisible() then
-   trailTail.new(models.model.testtail)
+   local testTail = trailTail.new(models.model.testtail)
+   table.insert(tailList, testTail)
 end
 
-return tail
+return tailList

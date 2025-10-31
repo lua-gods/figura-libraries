@@ -1,4 +1,4 @@
-local tail = require('main')
+local tailList = require('main')
 
 local debugRender = false
 
@@ -54,15 +54,7 @@ local function drawLine(a, b, color)
       :setRot(0, 0, angle)
 end
 
-hud.preRender = function(delta)
-   if not debugRender then
-      return
-   end
-   hud:removeTask()
-   taskI = 0
-
-   toHud = client.getScaledWindowSize() * -0.5
-
+local function debugTailRender(tail, delta)
    local pos = math.lerp(tail.oldPoints[0], tail.points[0], delta) --[[@as Vector3]]
    for i = 1, #tail.models do
       local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)  --[[@as Vector3]]
@@ -72,5 +64,19 @@ hud.preRender = function(delta)
       drawLine(nextPos, nextPos + (tail.config.collisionOffsets[i] or vec(0, 0, 0)) / 16, vec(0, 1, 0))
 
       pos = nextPos
+   end
+end
+
+hud.preRender = function(delta)
+   if not debugRender then
+      return
+   end
+   hud:removeTask()
+   taskI = 0
+
+   toHud = client.getScaledWindowSize() * -0.5
+
+   for _, tail in ipairs(tailList) do
+      debugTailRender(tail, delta)
    end
 end

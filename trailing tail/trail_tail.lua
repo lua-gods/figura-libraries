@@ -11,6 +11,10 @@ local tails = {} ---@type auria.trail_tail[]
 ---@field vels Vector3[]
 ---@field modelScale number
 ---@field models ModelPart[]
+---@field posDelay number
+---@field posDelayOld number
+---@field posDelaySum number
+---@field lastFrameCount number
 ---@field config auria.trail_tail.config
 local trailingTail = {}
 trailingTail.__index = trailingTail
@@ -70,6 +74,7 @@ function lib.new(tailModel)
       maxDist = 1.2,
       maxAngle = 30,
       partToWorldDelay = 0.75,
+      partToWorldDelayMin = 0,
       physicsStrength = 1,
       collisionOffsets = {}
    }
@@ -133,6 +138,10 @@ function lib.new(tailModel)
       tail.startDist[i] = (i - 1) / (#modelList - 1)
       tail.config.collisionOffsets[i] = vec(0, 0, 0)
    end
+   tail.posDelay = 0
+   tail.posDelayOld = 0
+   tail.posDelaySum = 0
+   tail.lastFrameCount = 0
    -- render
    local tailDir = (modelList[2]:getPivot() - modelList[1]:getPivot()):normalize()
    local startDist = tail.startDist
@@ -142,6 +151,7 @@ function lib.new(tailModel)
       if toWorld.v11 ~= toWorld.v11 then -- NaN
          return
       end
+      tail.lastFrameCount = tail.lastFrameCount + 1
       tail.startPos = toWorld:apply()
       tail.oldDir = toWorld:applyDir(tailDir):normalize()
 
@@ -164,7 +174,11 @@ function lib.new(tailModel)
       local renderPos = pos
       local tailStartDir = tail.oldDir
       local physicsStrength = tail.config.physicsStrength
-      local partToWorldDelay = tail.config.partToWorldDelay * physicsStrength
+      local posDelay = (tail.points[0] - tail.startPos):length()
+      tail.posDelaySum = tail.posDelaySum + posDelay
+      local posDelaySmooth = math.lerp(tail.posDelayOld, tail.posDelay, delta)
+      local partToWorldDelay = math.lerp(tail.config.partToWorldDelay, tail.config.partToWorldDelayMin, math.min(posDelaySmooth, 1))
+      partToWorldDelay = partToWorldDelay * physicsStrength
       for i = 1, #modelList do
          local model = modelList[i]
          local nextPos = math.lerp(tail.oldPoints[i], tail.points[i], delta)
@@ -248,6 +262,14 @@ local function tickTail(tail)
    end
 
    tail.points[0] = tail.startPos
+   tail.posDelayOld = tail.posDelay
+   if tail.lastFrameCount ~= 0 then
+      local target = tail.posDelaySum / tail.lastFrameCount
+      target = math.clamp(target, 0, 1)
+      tail.posDelay = math.lerp(tail.posDelay, target, 0.25)
+   end
+   tail.posDelaySum = 0
+   tail.lastFrameCount = 0
    local oldDir = tail.oldDir
    for i, pos in ipairs(tail.points) do
       local collisionOffset = (tail.config.collisionOffsets[i] or vec(0, 0, 0)) / 16
@@ -269,14 +291,15 @@ local function tickTail(tail)
          end
       end
       local targetPos = previous + targetDir * dist
+      -- pull or push to desired length
+      local pullPushStrength = offsetLength / dist
+      -- tail.models[i]:setColor(math.lerp(vec(1, 1, 1), pullPushStrength > 1 and vec(1, 0, 0) or vec(0, 1, 0), math.abs(pullPushStrength - 1)))
+      pullPushStrength = math.abs((pullPushStrength - 1) * 0.5)
+      pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) * 0.2
+      pullPushStrength = math.min(pullPushStrength, 1)
       -- clamp distance
       offsetLength = math.min(offsetLength, maxDist)
       pos = previous + dir * offsetLength
-      -- pull or push to desired length
-      local pullPushStrength = offsetLength / dist
-      pullPushStrength = math.abs(pullPushStrength - 1)
-      pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) * 0.1
-      pullPushStrength = math.min(pullPushStrength, 1)
 
       local targetOffset = targetPos - pos
 
@@ -289,7 +312,9 @@ local function tickTail(tail)
 
       local newPos = pos + tail.vels[i]:clamped(0, 50)
 
-      tail.points[i] = movePointWithCollision(pos, newPos) - collisionOffset
+      pos = movePointWithCollision(pos, newPos)
+
+      tail.points[i] = pos - collisionOffset
 
       oldDir = dir
    end
