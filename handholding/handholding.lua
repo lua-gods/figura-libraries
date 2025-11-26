@@ -7,6 +7,7 @@ local myUuid = avatar:getUUID()
 ---uuid of person to hold hands with
 ---@type string?
 mod.target = nil
+---@type {model: ModelPart, rotMat: Matrix3, len: number, yaw: number}
 local lastArm = nil
 
 ---sets person to hold hands with
@@ -25,6 +26,11 @@ function mod.setTarget(target)
       mod.target = target:getUUID()
    end
    avatar:store('simpleHandHolding.target', mod.target)
+end
+
+---@return {model: ModelPart, rotMat: Matrix3, len: number, yaw: number}?
+function mod.getCurrentArm()
+   return lastArm
 end
 
 ---snippet by @kitcat962
