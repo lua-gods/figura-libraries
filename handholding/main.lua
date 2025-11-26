@@ -1,0 +1,1 @@
+vanilla_model.PLAYER:setVisible(false)
