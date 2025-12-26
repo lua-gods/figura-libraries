@@ -97,11 +97,15 @@ function lib.new(tailModel)
          table.insert(modelList, model)
          model = model[name..n]
       end
+      if #modelList <= 1 then
+         error('could not find next tail part "'..name..n..'"', 2)
+      end
+   else
+      if #modelList <= 1 then
+         error('at least 2 model parts expected, got '..#modelList, 2)
+      end
    end
    tail.models = modelList
-   if #tail.models <= 1 then
-      error('at least 2 model parts expected, got '..#tail.models, 2)
-   end
    -- start part
    local startModel = modelList[1]:getParent():newPart(modelList[1]:getName())
    startModel:setPivot(modelList[1]:getPivot())
