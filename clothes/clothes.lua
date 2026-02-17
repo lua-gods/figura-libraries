@@ -23,16 +23,15 @@ local function copyOutfit(tbl)
 end
 
 ---creates new clothes handler
----@param name string -- used in pings
+---@param name string|fun(data: string) -- used in pings, if function, will be called when trying to sync
 ---@param textureSize Vector2
----@param modelpartsList {[string]: ModelPart[]|{[number]: ModelPart, uvSize: Vector2?, addToParent: boolean?}} -- modelparts used for clothes layers should be cube or mesh
+---@param modelpartsList {[string]: ModelPart[]|{[number]: ModelPart, uvSize: Vector2?, addToParent: boolean?, reUse: boolean?}} -- modelparts used for clothes layers should be cube or mesh
 ---@param groups {title: string, texture?: Texture, models: string[], distance: number, modelparts: ModelPart[], enableModels?: {[number]: {[1]: ModelPart, [2]: Vector2}}}[]
 ---@param defaultOutfit? {[string]: Vector4}
 ---@param configName? string -- if provided the clothes will be stored in config with this name
 ---@return auria.clothes.Handler
 function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, configName)
    local obj = {
-      name = name,
       groups = groups,
       textureSize = textureSize,
       configName = configName,
@@ -57,9 +56,13 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
    end
    obj.currentCompressed = obj:compressOutfit()
    -- pings
-   local pingName = "auria.clothes."..name
-   pings[pingName] = function(data) obj:setFromCompressedOutfit(data) end
-   obj.ping = pings[pingName]
+   if type(name) == "string" then
+      local pingName = "auria.clothes."..name
+      pings[pingName] = function(data) obj:setFromCompressedOutfit(data) end
+      obj.ping = pings[pingName]
+   else
+      obj.ping = name
+   end
    -- create data for modelparts
    local modelpartsData = {}
    for i, group in pairs(groups) do
@@ -83,35 +86,45 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
    -- generate modelparts
    for i, groupsInfo in pairs(modelpartsData) do
       local modelparts = modelpartsList[i]
-      for _, model in ipairs(modelparts) do
-         local expandDirs = {}
-         for _, vertexGroup in pairs(model:getAllVertices()) do
-            for _, vertex in pairs(vertexGroup) do
-               local id = tostring(vertex:getPos())
-               expandDirs[id] = (expandDirs[id] or emptyVec3) + vertex:getNormal()
-            end
-         end
-         local modelsGroup = model:newPart('clothes_'..model:getName()):remove()
-         for _, v in pairs(groupsInfo) do
-            local group = groups[v]
-            local newModel = model:copy('')
-               :visible(false)
+      if modelparts.reUse then
+         local group = groups[1]
+         for _, model in ipairs(modelparts) do
+            model:visible(false)
                :setPrimaryTexture('CUSTOM', group.texture)
                :setSecondaryRenderType('NONE')
-            table.insert(group.modelparts, newModel)
-            modelsGroup:addChild(newModel)
-            local dist = group.distance
-            for _, vertexGroup in pairs(newModel:getAllVertices()) do
+            table.insert(group.modelparts, model)
+         end
+      else
+         for _, model in ipairs(modelparts) do
+            local expandDirs = {}
+            for _, vertexGroup in pairs(model:getAllVertices()) do
                for _, vertex in pairs(vertexGroup) do
-                  local pos = vertex:getPos()
-                  vertex:setPos(pos + expandDirs[tostring(pos)] * dist)
+                  local id = tostring(vertex:getPos())
+                  expandDirs[id] = (expandDirs[id] or emptyVec3) + vertex:getNormal()
                end
             end
-         end
-         if modelparts.addToParent then
-            model:getParent():addChild(modelsGroup)
-         else
-            model:addChild(modelsGroup)
+            local modelsGroup = model:newPart('clothes_'..model:getName()):remove()
+            for _, v in pairs(groupsInfo) do
+               local group = groups[v]
+               local newModel = model:copy('')
+                  :visible(false)
+                  :setPrimaryTexture('CUSTOM', group.texture)
+                  :setSecondaryRenderType('NONE')
+               table.insert(group.modelparts, newModel)
+               modelsGroup:addChild(newModel)
+               local dist = group.distance
+               for _, vertexGroup in pairs(newModel:getAllVertices()) do
+                  for _, vertex in pairs(vertexGroup) do
+                     local pos = vertex:getPos()
+                     vertex:setPos(pos + expandDirs[tostring(pos)] * dist)
+                  end
+               end
+            end
+            if modelparts.addToParent then
+               model:getParent():addChild(modelsGroup)
+            else
+               model:addChild(modelsGroup)
+            end
          end
       end
    end
