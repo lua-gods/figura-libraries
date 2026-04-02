@@ -251,6 +251,10 @@ for i, v in ipairs(config.disabledEntities) do
    config.disabledEntities[v] = i
 end
 
+local function isNotHostPlayer(entity)
+   return entity ~= player
+end
+
 local function patPat()
    if player:getItem(1).id ~= "minecraft:air" then return end
    if config.requireEmptyOffHand and player:getItem(2).id ~= "minecraft:air" then return end
@@ -259,19 +263,35 @@ local function patPat()
    local eyeOffset = renderer:getEyeOffset()
    if eyeOffset then myPos = myPos + eyeOffset end
 
-   local block, blockPos = player:getTargetedBlock(true, 5)
-   local dist = (myPos - blockPos):length()
-   local targetType = "block"
+   local reachDistance = host:getReachDistance()
+   local targetPos = myPos + player:getLookDir() * reachDistance
 
-   local entity, entityPos = player:getTargetedEntity(5)
+   local block, blockPos = raycast:block(myPos, targetPos)
+   if not block then
+      block = world.newBlock("air")
+      blockPos = vec(0, 0, 0)
+   end
+
+   local dist = (myPos - blockPos):length()
+   local isEntity = false
+
+   local entity, entityPos = raycast:entity(myPos, targetPos, isNotHostPlayer)
+
    if entity then
       local newDist = (myPos - entityPos):length()
       if newDist < dist then
-         targetType = "entity"
+         isEntity = true
       end
    end
 
-   if targetType == "block" then
+   if isEntity then
+      local entityType = entity:getType()
+      if entity:hasContainer() then return end
+      if config.disabledEntities[entityType] then return end
+      if entity:getVariable("patpat.noPats") then return end
+
+      pings.patpat(packUuid(entity:getUUID()))
+   else
       if not config.patpatBlocks[block.id] then return end
       if getAvatarVarsFromBlock(block)["patpat.noPats"] then return end
       local pos = block:getPos()
@@ -283,13 +303,6 @@ local function patPat()
       )
       local finalPos = (pos + playerOffset * 32) % 64 + playerOffset * 64
       pings.patpat(finalPos:unpack())
-   else
-      local entityType = entity:getType()
-      if entity:hasContainer() then return end
-      if config.disabledEntities[entityType] then return end
-      if entity:getVariable("patpat.noPats") then return end
-
-      pings.patpat(packUuid(entity:getUUID()))
    end
    host:swingArm()
 end
