@@ -245,12 +245,38 @@ local function isPointInWall(pos)
    end
 end
 
+local function sableSublevelToWorld(pos) return pos end
+if client.isModLoaded("sable") then
+   -- we have to raycast twice because sublevel rotation gives some offset
+   local sabelSubLevelOffset = vec(0, 10000, 0)
+   ---@param pos Vector3
+   ---@return Vector3
+   function sableSublevelToWorld(pos)
+      local pos1 = pos + sabelSubLevelOffset
+      local pos2 = pos - sabelSubLevelOffset
+      local _, hitPos1 = raycast:block(pos1, pos1)
+      local _, hitPos2 = raycast:block(pos2, pos2)
+      return (hitPos1 + hitPos2) * 0.5
+   end
+end
+
 ---@overload fun(pos: Vector3, newPos: Vector3): Vector3
 local function movePointWithCollision(pos, newPos)
    for axis = 1, 3 do
       local targetPos = pos:copy()
       targetPos[axis] = newPos[axis]
+      local time = client.getSystemTime()
+      pos = (pos - targetPos):clampLength(0, 50) + targetPos -- limit raycast distance
       local _, hitPos = raycast:block(pos, targetPos)
+      hitPos = sableSublevelToWorld(hitPos) -- fix sable mod
+      -- local hitPos = targetPos
+      time = client.getSystemTime() - time
+      -- if time > 50 then
+      --    print("raycast dist", (pos - targetPos):length())
+      --    print("axis", axis)
+      --    print(pos, targetPos, hitPos)
+      --    error("")
+      -- end
       local offset = hitPos - pos
       pos = pos + offset:clamped(0, math.max(offset:length() - 0.001, 0))
    end
