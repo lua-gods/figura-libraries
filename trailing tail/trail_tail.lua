@@ -265,18 +265,9 @@ local function movePointWithCollision(pos, newPos)
    for axis = 1, 3 do
       local targetPos = pos:copy()
       targetPos[axis] = newPos[axis]
-      local time = client.getSystemTime()
       pos = (pos - targetPos):clampLength(0, 50) + targetPos -- limit raycast distance
       local _, hitPos = raycast:block(pos, targetPos)
       hitPos = sableSublevelToWorld(hitPos) -- fix sable mod
-      -- local hitPos = targetPos
-      time = client.getSystemTime() - time
-      -- if time > 50 then
-      --    print("raycast dist", (pos - targetPos):length())
-      --    print("axis", axis)
-      --    print(pos, targetPos, hitPos)
-      --    error("")
-      -- end
       local offset = hitPos - pos
       pos = pos + offset:clamped(0, math.max(offset:length() - 0.001, 0))
    end
