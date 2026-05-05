@@ -1,5 +1,5 @@
 -- config
-local config = {
+local conf = {
    patParticle = "minecraft:heart", -- particle that will be used when patting
    patpatKey = "key.mouse.right", -- keybind that will be used for patpat
 
@@ -16,7 +16,8 @@ local config = {
 
    noPats = false,
    noHearts = false,
-   -- boundingBox = vec(0.6, 1.7999, 0.6) -- custom bounding box
+
+   selfPat = false, -- for debugging
 }
 
 -- events
@@ -51,9 +52,8 @@ local headEvents = { -- this table works like playerEvents table but instead of 
 }
 
 -- some useful variables
-if config.noPats then avatar:store("patpat.noPats", true) end
-if config.noHearts then avatar:store("patpat.noHearts", true) end
-if config.boundingBox then avatar:store("patpat.boundingBox", config.boundingBox) end
+if conf.noPats then avatar:store("patpat.noPats", true) end
+if conf.noHearts then avatar:store("patpat.noHearts", true) end
 local vector3Index = figuraMetatables.Vector3.__index
 local myUuid = avatar:getUUID()
 
@@ -61,23 +61,29 @@ local myUuid = avatar:getUUID()
 playerEvents.player = playerEvents -- backwards compatibility
 playerEvents.head = headEvents
 
----@overload fun(value: any): string
-local function rawtype(value)
-   local success, err = pcall(rawget, value, "")
-   return success and "table" or err:match('table expected, got (%w*)')
-end
-
+local eventError
 local function callEvent(group, eventName, ...)
    local output = {}
-   for _, func in ipairs(playerEvents[group]--[[@as table]][eventName]) do
+   for _, func in ipairs(playerEvents[group][eventName]) do
       table.insert(output, {func(...)})
    end
    return output
 end
 
+local function callEventPcalled(group, eventName, ...)
+   local ok, output = pcall(callEvent, group, eventName, ...)
+   if ok then
+      return output
+   end
+   eventError = 'from patpat event:\n'..output..''
+end
+
 local myPatters = {player = {}, head = {}}
 
 function events.tick()
+   if eventError then
+      error(eventError)
+   end
    local patted = false
    for uuid, time in pairs(myPatters.player) do
       if time <= 0 then
@@ -114,27 +120,21 @@ function events.tick()
 end
 
 avatar:store("petpet", function(uuid, time)
-   assert(rawtype(uuid) == 'string')
-   assert(rawtype(time) == 'number')
-   time = math.clamp(time or 0, config.holdFor, 100)
+   local entity = world.getEntity(uuid)
+   if not entity then return end
+   time = math.min(time or 10, 40)
    if not myPatters.player[uuid] then
-      callEvent("player", "onPat")
-      callEvent("player", "togglePat", true)
+      callEventPcalled("player", "onPat")
+      callEventPcalled("player", "togglePat", true)
    end
    myPatters.player[uuid] = time
-   local entity = world.getEntity(uuid)
-   if entity then
-      callEvent("player", "oncePat", entity)
-   end
+   callEventPcalled("player", "oncePat", entity)
 end)
 
 avatar:store("petpet.playerHead", function(uuid, time, x, y, z)
-   assert(rawtype(uuid) == 'string')
-   assert(rawtype(time) == 'number')
-   assert(rawtype(x) == 'number')
-   assert(rawtype(y) == 'number')
-   assert(rawtype(z) == 'number')
-   time = math.min(time or config.holdFor, 100)
+   local entity = world.getEntity(uuid)
+   if not entity then return end
+   time = math.min(time or 10, 40) -- math.min and vec does type checking
    local pos = vec(x, y, z)
    local i = tostring(pos)
    local patters = myPatters.head[i]
@@ -144,14 +144,11 @@ avatar:store("petpet.playerHead", function(uuid, time, x, y, z)
    end
 
    if not patters[uuid] then
-      callEvent("head", "onPat", pos)
-      callEvent("head", "togglePat", true, pos)
+      callEventPcalled("head", "onPat", pos)
+      callEventPcalled("head", "togglePat", true, pos)
    end
    patters[uuid] = time
-   local entity = world.getEntity(uuid)
-   if entity then
-      callEvent("head", "oncePat", entity, pos)
-   end
+   callEventPcalled("head", "oncePat", entity, pos)
 end)
 
 local function packUuid(uuid)
@@ -186,13 +183,25 @@ local function getAvatarVarsFromBlock(block)
    return {}
 end
 
+---@param vars table
+---@return boolean
+local function canPat(vars)
+   if vars["patpat.noPats"] then
+      return false
+   end
+   if vars["petpet"] or vars["patpat.yesPats"] then
+      return true
+   end
+   return false
+end
+
 -- pings
 function pings.patpat(a, b, c)
    if not player:isLoaded() then return end
    local avatarVars, pos, boundingBox, pattingOutput
    local petpetSuccess, noPats, noHearts
    if b then -- block
-      -- decrypt position
+      -- decode position
       local receivedPos = vec(a, b, c)
       local playerPos = player:getPos()
       local offset = (receivedPos / 64):floor()
@@ -205,7 +214,7 @@ function pings.patpat(a, b, c)
       pos = blockPos + vec(0.5, 0, 0.5)
       boundingBox = vec(0.8, 0.8, 0.8)
       -- call petpet function
-      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet.playerHead"], myUuid, config.holdFor, blockPos.x, blockPos.y, blockPos.z)
+      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet.playerHead"], myUuid, conf.holdFor, blockPos.x, blockPos.y, blockPos.z)
       pattingOutput = callEvent("head", "patting", blockPos)
    else -- entity
       local entity = world.getEntity(unpackUuid(a))
@@ -219,7 +228,7 @@ function pings.patpat(a, b, c)
          boundingBox = entity:getBoundingBox()
       end
       -- call petpet function
-      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet"], myUuid, config.holdFor)
+      petpetSuccess, noPats, noHearts = pcall(avatarVars["petpet"], myUuid, conf.holdFor)
       pattingOutput = callEvent("player", "patting", entity)
    end
    -- cancel patpat particles when returned true in patting event
@@ -236,19 +245,19 @@ function pings.patpat(a, b, c)
       math.random(),
       math.random()
    ) * boundingBox
-   particles[config.patParticle]:pos(pos):size(1):spawn()
+   particles[conf.patParticle]:pos(pos):size(1):spawn()
 end
 
 -- host only
 if not host:isHost() then return playerEvents end
 
 -- update config
-for i, v in ipairs(config.patpatBlocks) do
-   config.patpatBlocks[v] = i
+for i, v in ipairs(conf.patpatBlocks) do
+   conf.patpatBlocks[v] = i
 end
 
-for i, v in ipairs(config.disabledEntities) do
-   config.disabledEntities[v] = i
+for i, v in ipairs(conf.disabledEntities) do
+   conf.disabledEntities[v] = i
 end
 
 local function isNotHostPlayer(entity)
@@ -257,7 +266,7 @@ end
 
 local function patPat()
    if player:getItem(1).id ~= "minecraft:air" then return end
-   if config.requireEmptyOffHand and player:getItem(2).id ~= "minecraft:air" then return end
+   if conf.requireEmptyOffHand and player:getItem(2).id ~= "minecraft:air" then return end
 
    local myPos = player:getPos():add(0, player:getEyeHeight(), 0)
    local eyeOffset = renderer:getEyeOffset()
@@ -277,6 +286,11 @@ local function patPat()
 
    local entity, entityPos = raycast:entity(myPos, targetPos, isNotHostPlayer)
 
+   if conf.selfPat and not entity then
+      entity = player
+      entityPos = entity:getPos()
+   end
+
    if entity then
       local newDist = (myPos - entityPos):length()
       if newDist < dist then
@@ -286,14 +300,17 @@ local function patPat()
 
    if isEntity then
       local entityType = entity:getType()
+      local vars = entity:getVariable()
       if entity:hasContainer() then return end
-      if config.disabledEntities[entityType] then return end
-      if entity:getVariable("patpat.noPats") then return end
+      if conf.disabledEntities[entityType] then return end
+      if entity:isPlayer() and not canPat(vars) then return end
 
       pings.patpat(packUuid(entity:getUUID()))
    else
-      if not config.patpatBlocks[block.id] then return end
-      if getAvatarVarsFromBlock(block)["patpat.noPats"] then return end
+      local vars = getAvatarVarsFromBlock(block)
+      if not conf.patpatBlocks[block.id] then return end
+      if not canPat(vars) then return end
+      -- encode position
       local pos = block:getPos()
       local playerPos = player:getPos()
       local playerOffset = vec(
@@ -309,16 +326,24 @@ end
 
 local patting = false
 local patTime = 0
-local key = keybinds:newKeybind("patpat", config.patpatKey)
+local key = keybinds:newKeybind("patpat", conf.patpatKey)
 
-key.press = function() if not host:getScreen() and not action_wheel:isEnabled() and player:isLoaded() and player:isSneaking() then patting = true patPat() end end
+key.press = function()
+   if not host:getScreen() and
+      not action_wheel:isEnabled() and
+      player:isLoaded() and
+      player:isSneaking() then
+      patting = true
+      patPat()
+   end
+end
 key.release = function() patting = false patTime = 0 end
 
 function events.tick()
    if not patting then return end
 
    patTime = patTime + 1
-   if patTime % config.patDelay == 0 then
+   if patTime % conf.patDelay == 0 then
       patPat()
    end
 end
