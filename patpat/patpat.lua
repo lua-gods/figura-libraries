@@ -254,17 +254,17 @@ local function patpatPing(a, b, c)
       petpetSuccess, noPats, noHearts = pcall(vars["petpet"], myUuid, conf.holdFor)
       pattingOutput = callEvent("player", "patting", entity)
    end
+   -- swing
+   if host:isHost() and not (petpetSuccess and noPats) then
+      host:swingArm()
+   end
+   -- spawn particles
    -- cancel patpat particles when returned true in patting event
    for _, v in pairs(pattingOutput) do
       if v[1] then
          return
       end
    end
-   -- swing
-   if host:isHost() and not (petpetSuccess and noPats) then
-      host:swingArm()
-   end
-   -- spawn particles
    noHearts = petpetSuccess and rawequal(noHearts, true) or vars['patpat.noHearts']
    if noHearts then return end
    pos = pos - boundingBox.x_z * 0.5 + vec(
