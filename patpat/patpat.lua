@@ -255,7 +255,7 @@ local function patpatPing(a, b, c)
       pattingOutput = callEvent("player", "patting", entity)
    end
    -- swing
-   if host:isHost() and not (petpetSuccess and noPats) then
+   if host:isHost() and not (petpetSuccess and rawequal(noPats, true)) then
       host:swingArm()
    end
    -- spawn particles
