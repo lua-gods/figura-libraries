@@ -29,13 +29,13 @@ You can disable pats in config at top of file or by adding this line of code in 
 avatar:store("patpat.noPats", true)
 ```
 
-or you can just disable particles (also possible to configure in config)
+or you can also disable particles (also possible to configure in config)
 ```lua
 avatar:store("patpat.noHearts", true)
 ```
 
 ## custom patting animation
-You can use custom animation using this snippet
+You can use custom animation using this snippet, make sure to change model and animation name
 ```lua
 local patpat = require("libraries.patpat")
 table.insert(patpat.patting, function(entity, noPats, noHearts)
@@ -47,4 +47,4 @@ end)
 ```
 
 ## compatibility
-patpat is compatible with both petpet and [slyme patpat](https://github.com/Slymeball/figura-avatars/blob/main/Rewrite/Patpat/Patpat.lua)
+patpat is compatible with both petpet, [slyme patpat](https://github.com/Slymeball/figura-avatars/blob/main/Rewrite/Patpat/Patpat.lua), [FoxPat](https://github.com/Bitslayn/FOXAPI/) and most others
