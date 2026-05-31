@@ -34,5 +34,17 @@ or you can just disable particles (also possible to configure in config)
 avatar:store("patpat.noHearts", true)
 ```
 
+## custom patting animation
+You can use custom animation using this snippet
+```lua
+local patpat = require("libraries.patpat")
+table.insert(patpat.patting, function(entity, noPats, noHearts)
+   if not noPats then
+      animations["model_name_here"]["animation_name"]:play()
+   end
+   return true, false
+end)
+```
+
 ## compatibility
 patpat is compatible with both petpet and [slyme patpat](https://github.com/Slymeball/figura-avatars/blob/main/Rewrite/Patpat/Patpat.lua)

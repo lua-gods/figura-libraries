@@ -40,7 +40,7 @@ local playerEvents = { -- list of tables containing functions that get called wh
    oncePat = { -- every time someone pats you, entity - entity that is petting you, can return 2 booleans, noSwing, noHearts
       --function(entity) end
    },
-   patting = { -- called every time you are patting someone, you can return true to stop particles
+   patting = { -- called every time you are patting someone, you can return 2 booleans, noSwing, noHearts
       --function(entity) end
    }
 }
@@ -224,12 +224,13 @@ local function patpatPing(a, b, c)
    if not player:isLoaded() then return end
    local vars, pos, boundingBox, pattingOutput
    local petpetSuccess, noPats, noHearts
+   local blockPos, entity
    if b then -- block
       -- decode position
       local receivedPos = vec(a, b, c)
       local playerPos = player:getPos()
       local offset = (receivedPos / 64):floor()
-      local blockPos = (playerPos / 64 + offset * 0.5):floor() * 64
+      blockPos = (playerPos / 64 + offset * 0.5):floor() * 64
       blockPos = blockPos + receivedPos % 64 - 32 * offset
       local block = world.getBlockState(blockPos)
       -- set position for particles
@@ -238,9 +239,9 @@ local function patpatPing(a, b, c)
       -- call petpet function
       vars = getAvatarVarsFromBlock(block) or {}
       petpetSuccess, noPats, noHearts = pcall(vars["petpet.playerHead"], myUuid, conf.holdFor, blockPos.x, blockPos.y, blockPos.z)
-      pattingOutput = callEvent("head", "patting", blockPos)
+
    else -- entity
-      local entity = world.getEntity(unpackUuid(a))
+      entity = world.getEntity(unpackUuid(a))
       if not entity then return end
       vars = entity:getVariable()
       -- get position and safely get patpat.boundingBox and fallback to normal boundingBox
@@ -252,20 +253,27 @@ local function patpatPing(a, b, c)
       end
       -- call petpet function
       petpetSuccess, noPats, noHearts = pcall(vars["petpet"], myUuid, conf.holdFor)
-      pattingOutput = callEvent("player", "patting", entity)
+   end
+   if petpetSuccess then
+      noPats, noHearts = rawequal(noPats, true), rawequal(noHearts, true)
+   else
+      noPats, noHearts = false, false
+   end
+   if b then
+      pattingOutput = callEvent("head", "patting", blockPos, noPats, noHearts)
+   else
+      pattingOutput = callEvent("player", "patting", entity, noPats, noHearts)
+   end
+   for _, v in pairs(pattingOutput) do
+      if v[1] then noPats = true end
+      if v[2] then noHearts = true end
    end
    -- swing
-   if host:isHost() and not (petpetSuccess and rawequal(noPats, true)) then
+   if host:isHost() and not noPats then
       host:swingArm()
    end
    -- spawn particles
-   -- cancel patpat particles when returned true in patting event
-   for _, v in pairs(pattingOutput) do
-      if v[1] then
-         return
-      end
-   end
-   noHearts = petpetSuccess and rawequal(noHearts, true) or vars['patpat.noHearts']
+   noHearts = noHearts or vars['patpat.noHearts']
    if noHearts then return end
    pos = pos - boundingBox.x_z * 0.5 + vec(
       math.random(),
