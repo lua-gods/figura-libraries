@@ -22,7 +22,7 @@ if pcall(require, windLibPath) then
    getWind = windLib.getPlayerWind
 end
 ```
-## usage
+### library methods
 you can use `windLib.getPlayerWind()` to get wind direction near player, giving `true` as argument makes `player:getVelocity()` return without wind when `editGetVelocity` is true
 
 for wind farther from player you can use
