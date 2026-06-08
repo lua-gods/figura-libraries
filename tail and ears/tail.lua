@@ -11,6 +11,15 @@ local tail = {}
 local updatingTails = {}
 tail.__index = tail
 
+local windLibPath = "./simpleWind"
+
+local getWind = function(a) return vec(0, 0, 0) end
+
+if pcall(require, windLibPath) then
+   local windLib = require(windLibPath)
+   getWind = windLib.getPlayerWind
+end
+
 ---creates new tail physics
 ---@param model ModelPart|ModelPart[]
 ---@return auria.tailPhysics
@@ -58,7 +67,9 @@ function tailPhysics.new(model)
 
       -- table containing functions with argument rot that is table of vector 4 (default 0, 0, 0, 1) that controls tail rotation, returning true will stop physics, can be used for sleeping animation
       ---@type (fun(rot: Vector4[]): boolean)[]
-      rotOverride = {}
+      rotOverride = {},
+
+      windStrength = vec(0.3, 1, 0.1),
    }
    -- model
    obj.defaultRot = {}
@@ -152,8 +163,8 @@ local function getUnderwaterlevel(pos)
    return y
 end
 
----@overload fun(obj: auria.tailPhysics, playerVelRaw: Vector3, bodyVel: number, waterStrength: number, baseWagWalkSpeed: number)
-local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSpeed)
+---@overload fun(obj: auria.tailPhysics, playerVelRaw: Vector3, bodyVel: number, waterStrength: number, baseWagWalkSpeed: number, windVel: Vector3)
+local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSpeed, windVel)
    -- update tail delay if changed
    if obj.tailDelay ~= obj.config.tailDelay then
       obj.tailDelay = obj.config.tailDelay
@@ -181,9 +192,10 @@ local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSp
       end
    end
    -- get velocity
+   local fullVel = playerVelRaw + windVel * obj.config.windStrength
    bodyVel = math.clamp(bodyVel * obj.config.rotVelocityStrength * 0.1, -obj.config.rotVelocityLimit, obj.config.rotVelocityLimit)
    local wagWalkSpeed = obj.config.walkLimit == 0 and 0 or math.clamp(playerVelRaw.z * obj.config.velocityStrength.z / obj.config.walkLimit * baseWagWalkSpeed, 0, 1)
-   local playerVel = playerVelRaw * obj.config.velocityStrength
+   local playerVel = fullVel * obj.config.velocityStrength
    -- water level
    local tailPos = player:getPos():add(0, obj.tailY, 0)
    local waterLevel = getUnderwaterlevel(tailPos)
@@ -191,7 +203,7 @@ local function tickTail(obj, playerVelRaw, bodyVel, waterStrength, baseWagWalkSp
    -- apply velocity
    local acc = vec(
       math.clamp(playerVel.y * 2 - inWater * 4, obj.config.verticalVelocityMin, obj.config.verticalVelocityMax),
-      bodyVel * math.max(1 - math.abs(playerVelRaw.x) * 6, 0) + math.clamp(playerVel.x, -2, 2),
+      bodyVel * math.max(1 - math.abs(fullVel.x) * 6, 0) + math.clamp(playerVel.x, -2, 2),
       0,
       math.clamp(playerVel.z * 0.6 + math.abs(bodyVel) * 0.02 + inWater * 0.25 - playerVel.y * 0.12, 0, 1) * -obj.rot[1].w
    )
@@ -225,7 +237,10 @@ function events.tick()
    if not next(updatingTails) then return end
    -- get player velocity
    local bodyRot = player:getBodyYaw(1)
-   local playerVelRaw = vectors.rotateAroundAxis(bodyRot, player:getVelocity(), vec(0, 1, 0))
+   local windVel = getWind(true)
+   local playerVel = player:getVelocity()
+   playerVel = vectors.rotateAroundAxis(bodyRot, playerVel, vec(0, 1, 0))
+   windVel = vectors.rotateAroundAxis(bodyRot, windVel, vec(0, 1, 0))
    local bodyVel = (bodyRot - player:getBodyYaw(0) + 180) % 360 - 180
    -- body pitch
    local bodyPitch = 0
@@ -244,10 +259,11 @@ function events.tick()
       bodyPitch = -90 - player:getRot().x
       wagWalkSpeed = 0
    end
-   playerVelRaw = vectors.rotateAroundAxis(bodyPitch, playerVelRaw, vec(1, 0, 0))
+   playerVel = vectors.rotateAroundAxis(bodyPitch, playerVel, vec(1, 0, 0))
+   windVel = vectors.rotateAroundAxis(bodyPitch, windVel, vec(1, 0, 0))
    -- update all tails
    for _, tailObj in pairs(updatingTails) do
-      tickTail(tailObj, playerVelRaw, bodyVel, waterStrength, wagWalkSpeed)
+      tickTail(tailObj, playerVel, bodyVel, waterStrength, wagWalkSpeed, windVel)
    end
 end
 

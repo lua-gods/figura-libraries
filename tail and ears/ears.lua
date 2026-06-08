@@ -8,6 +8,15 @@ local updatingEars = {}
 ears.__index = ears
 local oldPlayerRot
 
+local windLibPath = "./simpleWind"
+
+local getWind = function(a) return vec(0, 0, 0) end
+
+if pcall(require, windLibPath) then
+   local windLib = require(windLibPath)
+   getWind = windLib.getPlayerWind
+end
+
 ---creates new ears physics
 ---@param leftEar ModelPart
 ---@param rightEar ModelPart
@@ -51,6 +60,8 @@ function earsPhysics.new(leftEar, rightEar)
       headRotMax = 90, -- maximum rotation for head rotation
 
       extraYRot = 0,
+
+      windStrength = 0.15,
    }
    -- model
    obj.leftEar = leftEar
@@ -93,8 +104,8 @@ function ears:remove(keepRot)
    updatingEars[self] = nil
 end
 
----@overload fun(obj: auria.earsPhysics, playerVel: Vector3, playerRotVel: Vector2, isCrouching: boolean, playerRot: Vector2)
-local function tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot)
+---@overload fun(obj: auria.earsPhysics, playerVel: Vector3, playerRotVel: Vector2, isCrouching: boolean, playerRot: Vector2, windVel: Vector3)
+local function tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot, windVel)
    -- set oldRot
    obj.oldRot = obj.rot
    -- set target rotation
@@ -119,6 +130,7 @@ local function tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot)
       -targetRotZW
    )
    -- player velocity
+   playerVel = playerVel + windVel * obj.config.windStrength
    playerVel = playerVel * obj.config.velocityStrength * 20
    playerRotVel = playerRotVel * obj.config.velocityStrength
    local clampedVel = vec(
@@ -161,12 +173,15 @@ function events.tick()
    local playerRotVel = (playerRot - oldPlayerRot) * 0.75
    oldPlayerRot = playerRot
    local playerVel = player:getVelocity()
+   local windVel = getWind(true)
    playerVel = vectors.rotateAroundAxis(playerRot.y, playerVel, vec(0, 1, 0))
    playerVel = vectors.rotateAroundAxis(-playerRot.x, playerVel, vec(1, 0, 0))
+   windVel = vectors.rotateAroundAxis(playerRot.y, windVel, vec(0, 1, 0))
+   windVel = vectors.rotateAroundAxis(-playerRot.x, windVel, vec(1, 0, 0))
    local isCrouching = player:getPose() == "CROUCHING"
    -- update ears
    for _, obj in pairs(updatingEars) do
-      tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot)
+      tickEars(obj, playerVel, playerRotVel, isCrouching, playerRot, windVel)
    end
 end
 
