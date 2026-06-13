@@ -316,6 +316,7 @@ local function tickTail(tail)
       local targetPos = previous + targetDir * dist
       -- pull or push to desired length
       local pullPushStrength = offsetLength / dist
+      if pullPushStrength ~= pullPushStrength then pullPushStrength = 1 end
       -- tail.models[i]:setColor(math.lerp(vec(1, 1, 1), pullPushStrength > 1 and vec(1, 0, 0) or vec(0, 1, 0), math.abs(pullPushStrength - 1)))
       pullPushStrength = math.abs((pullPushStrength - 1) * 0.5)
       pullPushStrength = pullPushStrength + math.max(angle - maxAngle, 0) ^ 2 * 0.2
