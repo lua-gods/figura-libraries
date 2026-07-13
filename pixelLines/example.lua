@@ -38,9 +38,9 @@ end
 
 do
    local whitePixel = textures.whitePixel or textures:newTexture('whitePixel', 1, 1):setPixel(0, 0, 1, 1, 1)
-   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 144) * 16 - offset * 16):texture(whitePixel, 32, 18):renderType('emissive_solid'):color(0.8, 0.8, 0.85)
-   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 146) * 16 - offset * 16):texture(whitePixel, 32, 18):renderType('emissive_solid'):color(0.7, 0.7, 0.75):rot(0, -90, 0)
-   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 146) * 16 - offset * 16):texture(whitePixel, 32, 32):renderType('emissive_solid'):color(0.95, 0.95, 0.98):rot(90, 0, 0)
+   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 144) * 16 - offset * 16):texture(whitePixel, 32, 18):renderType('EMISSIVE_SOLID'):color(0.8, 0.8, 0.85)
+   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 146) * 16 - offset * 16):texture(whitePixel, 32, 18):renderType('EMISSIVE_SOLID'):color(0.7, 0.7, 0.75):rot(0, -90, 0)
+   models:newPart('', 'World'):newSprite(''):pos(vec(-231, 64.1, 146) * 16 - offset * 16):texture(whitePixel, 32, 32):renderType('EMISSIVE_SOLID'):color(0.95, 0.95, 0.98):rot(90, 0, 0)
    lineLib:new():A(vec(-231, 64.1, 144) - offset):B(vec(-231, 63, 144) - offset):color(0.8, 0.8, 0.85):depth(-8)
    lineLib:new():A(vec(-231, 64.1, 144) - offset):B(vec(-233, 64.1, 144) - offset):color(0.8, 0.8, 0.85):depth(-8)
    lineLib:new():A(vec(-231, 64.1, 144) - offset):B(vec(-231, 64.1, 146) - offset):color(0.7, 0.7, 0.75):depth(-8)

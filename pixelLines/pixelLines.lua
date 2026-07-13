@@ -103,6 +103,7 @@ lineClass.depth = lineClass.setDepth
 ---Removes line from memory
 function lineClass:free()
    lines[self.id] = nil
+   forceUpdate = true
 end
 
 -- modified version of screen to world space made by GNamimates, used to get fov
