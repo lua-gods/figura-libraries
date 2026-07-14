@@ -21,7 +21,7 @@ function lib.new()
 end
 
 ---sets function that can add data that can be later used in nodes, returns self for selfchaining
----@param func fun(new: table, old: table)
+---@param func fun(data: table)
 ---@param startData table?
 ---@return aurianims.controller
 function animController:setDriver(func, startData)
@@ -66,7 +66,7 @@ function lib.stack(anims)
    }
 end
 
----creates blend mode allows to control how much animation will be used depending on return value from function 
+---creates blend node, allows to control how much animation will be used depending on return value from function 
 ---@param func fun(data: table, old: number, anim: aurianims.node|Animation): blend: number, instant: boolean?
 ---@param anim any
 ---@return table
