@@ -80,6 +80,52 @@ function lib.blend(func, anim)
    }
 end
 
+---creates step mode, allow choose between two animations depending on a predicate function, if predicate returns true anim1 will be used, if false anim2 will be used
+---@param func fun(data: table): boolean
+---@param anim1 aurianims.node|Animation
+---@param anim2 aurianims.node|Animation
+---@return aurianims.node
+function lib.step(func, anim1, anim2)
+   return {
+      type = 'step',
+      func = func,
+      anim1 = anim1,
+      anim2 = anim2
+   }
+end
+
+---creates multi step node, allows to choose between multiple animations depending on a predicate function, the function should return the name of the animation that should be used
+---@param func fun(data: table): string
+---@param anims table<string, aurianims.node|Animation>
+---@return aurianims.node
+function lib.switch(func, anims)
+   return {
+      type = 'switch',
+      func = func,
+      anims = anims
+   }
+end
+
+---creates vanilla leaf node, allows to use vanilla animations with blending
+---@param parts ModelPart[]
+---@return aurianims.node
+function lib.vanilla(parts)
+   local part_list = {}
+
+   for _, part in ipairs(parts) do
+      local vpart = part:getParentType():gsub("([a-z])([A-Z])", "%1_%2"):upper()
+      if vanilla_model[vpart] then
+         part_list[vpart] = part_list[vpart] or {}
+         part_list[vpart][#part_list[vpart] + 1] = part
+      end
+   end
+   
+   return {
+      type = 'vanilla',
+      part_list = part_list
+   }
+end
+
 local nodesUpdate
 local function update(controller, node, blend)
    if type(node) == 'Animation' then
@@ -114,6 +160,20 @@ nodesUpdate = {
       if instant then node.oldBLend = blend end
       update(controller, node.anim, blendMul * blend)
    end,
+   step = function(controller, node, blendMul)
+      local pred = node.func(controller.data)
+      update(controller, node.anim1, blendMul * (pred and 1 or 0))
+      update(controller, node.anim2, blendMul * (pred and 0 or 1))
+   end,
+   switch = function(controller, node, blendMul)
+      local pred = node.func(controller.data)
+      for k, v in pairs(node.anims) do
+         update(controller, v, blendMul * (k == pred and 1 or 0))
+      end
+   end,
+   vanilla = function(controller, node, blendMul)
+      -- leaf
+   end,
 }
 
 
@@ -142,7 +202,36 @@ nodesUpdateRender = {
    blend = function(delta, controller, node, blendMul)
       local blend = math.lerp(node.oldBLend, node.blend, delta)
       updateRender(delta, controller, node.anim, blendMul * blend)
-   end
+   end,
+   step = function(delta, controller, node, blendMul)
+      local pred = node.func(controller.data)
+      updateRender(delta, controller, node.anim1, blendMul * (pred and 1 or 0))
+      updateRender(delta, controller, node.anim2, blendMul * (pred and 0 or 1))
+   end,
+   switch = function(delta, controller, node, blendMul)
+      local pred = node.func(controller.data)
+      for k, v in pairs(node.anims) do
+         updateRender(delta, controller, v, blendMul * (k == pred and 1 or 0))
+      end
+   end,
+   vanilla = function(delta, controller, node, blendMul)
+      for name, parts in pairs(node.part_list) do
+         local rot = vanilla_model[name]:getOriginRot()
+         if name == "HEAD" then
+            rot[2] = ((rot[2] + 180) % 360) - 180
+         end
+         rot:scale(blendMul)
+
+         for _, p in ipairs(parts) do
+            -- blend only if the part has an override to avoide double vanilla rotation
+            if p:overrideVanillaRot() then
+               p:offsetRot(rot)
+            else
+               p:offsetRot(vec(0, 0, 0))
+            end
+         end
+      end
+   end,
 }
 
 function events.tick()
