@@ -85,6 +85,8 @@ local function update(controller, node, blend)
    if type(node) == 'Animation' then
       node:setPlaying(blend > 0.001)
       return
+   elseif node == nil then
+      return
    end
    nodesUpdate[node.type](controller, node, blend)
 end
@@ -119,6 +121,8 @@ local nodesUpdateRender
 local function updateRender(delta, controller, node, blend)
    if type(node) == 'Animation' then
       node:blend(blend)
+      return
+   elseif node == nil then
       return
    end
    nodesUpdateRender[node.type](delta, controller, node, blend)
