@@ -68,7 +68,7 @@ end
 
 ---creates blend node, allows to control how much animation will be used depending on return value from function 
 ---@param func fun(data: table, old: number, anim: aurianims.node|Animation): blend: number, instant: boolean?
----@param anim any
+---@param anim aurianims.node[]|Animation[]
 ---@return table
 function lib.blend(func, anim)
    return {
@@ -154,7 +154,7 @@ nodesUpdate = {
    end,
    blend = function(controller, node, blendMul)
       node.oldBLend = node.blend
-      local blend, instant = node.func(controller.data, node.blend, node.anim1, node.anim2)
+      local blend, instant = node.func(controller.data, node.blend, node.anim)
       blend = math.clamp(blend, 0, 1)
       node.blend = blend
       if instant then node.oldBLend = blend end
