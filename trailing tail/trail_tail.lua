@@ -78,7 +78,9 @@ function lib.new(tailModel)
       physicsStrength = 1, -- controls strength of physics, setting it to 0 will disable it
       maxDistanceFix = false, -- fixes tail colliding too early (default false)
       ---@type Vector3[]
-      collisionOffsets = {}
+      collisionOffsets = {},
+      ---@type number[]
+      maxAngles = {},
    }
    setmetatable(tail, trailingTail)
    -- find model parts
@@ -306,7 +308,7 @@ local function tickTail(tail)
       -- clamp angle
       local targetDir = dir
       local angle = math.deg(math.acos(math.clamp(dir:dot(oldDir), -1, 1)))
-      local maxAngle = tail.config.maxAngle
+      local maxAngle = tail.config.maxAngles[i] or tail.config.maxAngle
       if angle > maxAngle then -- clamp angle
          local rotAxis = oldDir:crossed(dir)
          if rotAxis:lengthSquared() > 0.001 then

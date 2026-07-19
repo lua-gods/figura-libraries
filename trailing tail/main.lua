@@ -11,6 +11,7 @@ tail.config.collisionOffsets = {
    [6] = vec(0, -1.5, 0),
    [7] = vec(0, -1, 0),
 }
+tail.config.maxAngles[1] = 90
 
 -- hide legs
 vanilla_model.LEFT_LEG:setVisible(false)
