@@ -3,11 +3,16 @@
 ---@class auria.clothes
 local lib = {}
 ---@class auria.clothes.Handler
----@field groups table
+---@field groups auria.clothes.group[]
+---@field groupsData auria.clothes.groupData[]
 ---@field current {[string]: Vector4}
 ---@field currentCompressed string
 ---@field configName string?
 ---@field ping function
+---@field toggableModels {[string]: auria.clothes.modelpartData}
+---@field appliedColorMatToggable {[string]: {[string]: number}}
+---@field textureSize Vector2
+---@field renderedClothes string
 ---@field outfitOverride {[any]: {[string]: Vector4}} -- if outfit exists in this table it will be used instead of selected clothes e.g. could be used to change outfit while in water, remember to update clothes after changing it
 local clothesHandler = {}
 clothesHandler.__index = clothesHandler
@@ -22,26 +27,57 @@ local function copyOutfit(tbl)
    return t
 end
 
+---@alias auria.clothes.modelpartData {
+---[number]: ModelPart,
+---uvSize: Vector2?,
+---addToParent: boolean?,
+---reUse: boolean?,
+---texture: Texture?,
+---}
+---@alias auria.clothes.modelpartsData {[string]: auria.clothes.modelpartData}
+---@alias auria.clothes.group {
+---title: string,
+---texture?: Texture,
+---distance: number,
+---models: ModelPart[],
+---enableModels?: {[number]: {[1]: ModelPart, [2]: Vector2}[]},
+---noColor: boolean[],
+---colorMatrix?: auria.clothes.colorMatrixFunc,
+---}
+---@alias auria.clothes.groupData {
+---clothesLimitX: number?,
+---modelparts: ModelPart[],
+---clothesLimitX: number,
+---uvScale: Vector3,
+---appliedColorMat: number[],
+---textureSize: Vector2,
+---}
+---@alias auria.clothes.colorMatrixFunc fun(color: Vector3, i: number): Matrix4
+
 ---creates new clothes handler
 ---@param name string|fun(data: string) -- used in pings, if function, will be called when trying to sync
 ---@param textureSize Vector2
----@param modelpartsList {[string]: ModelPart[]|{[number]: ModelPart, uvSize: Vector2?, addToParent: boolean?, reUse: boolean?}} -- modelparts used for clothes layers should be cube or mesh
----@param groups {title: string, texture?: Texture, models: string[], distance: number, modelparts: ModelPart[], enableModels?: {[number]: {[1]: ModelPart, [2]: Vector2}}}[]
+---@param modelpartsList auria.clothes.modelpartsData -- modelparts used for clothes layers should be cube or mesh
+---@param groups auria.clothes.group[]
 ---@param defaultOutfit? {[string]: Vector4}
 ---@param configName? string -- if provided the clothes will be stored in config with this name
 ---@return auria.clothes.Handler
 function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, configName)
+   ---@type auria.clothes.Handler
    local obj = {
       groups = groups,
       textureSize = textureSize,
       configName = configName,
       outfitOverride = {},
       toggableModels = {},
+      groupsData = {},
       renderedClothes = '',
       current = nil,
       currentCompressed = nil,
       ping = nil,
+      appliedColorMatToggable = {},
    }
+   local groupsData = obj.groupsData
    setmetatable(obj, clothesHandler)
    if configName then
       obj.current = config:load(configName)
@@ -66,10 +102,13 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
    -- create data for modelparts
    local modelpartsData = {}
    for i, group in pairs(groups) do
-      group.modelparts = {}
-      group.textureSize = group.texture and group.texture:getDimensions() or vec(16, 16) 
-      group.clothesLimitX = group.textureSize.x / textureSize.x
-      group.uvScale = (textureSize / group.textureSize):augmented()
+      local groupData = {}
+      groupsData[i] = groupData
+      groupData.modelparts = {}
+      groupData.appliedColorMat = {}
+      groupData.textureSize = group.texture and group.texture:getDimensions() or vec(16, 16) 
+      groupData.clothesLimitX = groupData.textureSize.x / textureSize.x
+      groupData.uvScale = (textureSize / groupData.textureSize):augmented()
       for _, v in pairs(group.models or {}) do
          if not modelpartsData[v] then
             modelpartsData[v] = {}
@@ -77,22 +116,30 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
          table.insert(modelpartsData[v], i)
       end
       if group.enableModels then
-         for _, modelData in pairs(group.enableModels) do
-            local model = modelData[1]
-            obj.toggableModels[model] = modelpartsList[model]
+         for _, list in pairs(group.enableModels) do
+            for _, modelData in pairs(list) do
+               local model = modelData[1]
+               obj.toggableModels[model] = modelpartsList[model]
+            end
          end
+      end
+   end
+   for i, v in pairs(modelpartsList) do
+      if v.texture then
+         obj.appliedColorMatToggable[i] = {}
       end
    end
    -- generate modelparts
    for i, groupsInfo in pairs(modelpartsData) do
       local modelparts = modelpartsList[i]
       if modelparts.reUse then
-         local group = groups[1]
+         local group = groups[i]
+         local groupData = groupsData[i]
          for _, model in ipairs(modelparts) do
             model:visible(false)
                :setPrimaryTexture('CUSTOM', group.texture)
                :setSecondaryRenderType('NONE')
-            table.insert(group.modelparts, model)
+            table.insert(groupData.modelparts, model)
          end
       else
          for _, model in ipairs(modelparts) do
@@ -106,11 +153,12 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
             local modelsGroup = model:newPart('clothes_'..model:getName()):remove()
             for _, v in pairs(groupsInfo) do
                local group = groups[v]
+               local groupData = groupsData[v]
                local newModel = model:copy('')
                   :visible(false)
                   :setPrimaryTexture('CUSTOM', group.texture)
                   :setSecondaryRenderType('NONE')
-               table.insert(group.modelparts, newModel)
+               table.insert(groupData.modelparts, newModel)
                modelsGroup:addChild(newModel)
                local dist = group.distance
                for _, vertexGroup in pairs(newModel:getAllVertices()) do
@@ -137,12 +185,20 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
 end
 
 ---updates clothes, returns self for chaining
----@param self self
 ---@param ignoreChangeFunc? boolean -- if true clothes change function will be ignored
 function clothesHandler:update(ignoreChangeFunc)
+   local a = avatar:getCurrentInstructions()
+   local b = client.getSystemTime()
    local outfit = self.current
    outfit = select(2, next(self.outfitOverride)) or outfit
+   local newRenderedClothes = self:compressOutfit(outfit)
+   if self.renderedClothes == newRenderedClothes then
+      return
+   end
+   self.renderedClothes = newRenderedClothes
    -- reset toggable models
+   ---@type {[string]: {[1]: Vector2, [2]: Vector3, [3]: Matrix4}}
+   local toggableModels = {}
    local toggableModelsPriority = {}
    for name, modelparts in pairs(self.toggableModels) do
       toggableModelsPriority[name] = -1
@@ -151,47 +207,103 @@ function clothesHandler:update(ignoreChangeFunc)
       end
    end
    -- update layers
-   for _, group in pairs(self.groups) do
+   for groupI, group in pairs(self.groups) do
+      local groupData = self.groupsData[groupI]
       local current = outfit[group.title] or vec(0, 1, 1, 1)
-      local id = current.x - 1
-      local color = current.yzw
-      local uv = matrices.mat3()
-      uv:translate(
-         id % group.clothesLimitX,
-         math.floor(id / group.clothesLimitX)
-      )
-      uv:scale(group.uvScale)
-      if id < 0 then
-         for _, model in pairs(group.modelparts) do model:visible(false) end
+      local id = current.x
+      local idUv = id - 1
+      local noColor = group.noColor and group.noColor[id]
+      local color = noColor and vec(1, 1, 1) or current.yzw --[[@as Vector3]]
+      local colorMat
+      if id < 1 then
+         for _, model in pairs(groupData.modelparts) do model:visible(false) end
       else
-         for _, model in pairs(group.modelparts) do
+         local uv = vec(
+            idUv % groupData.clothesLimitX,
+            math.floor(idUv / groupData.clothesLimitX)
+         )
+         local uvMat = matrices.mat3()
+         uvMat:translate(uv)
+         uvMat:scale(groupData.uvScale)
+         local modelColor = color
+         if group.colorMatrix and not noColor then
+            colorMat = group.colorMatrix(color, id)
+            local tex = group.texture
+            if tex then
+               local texSize = self.textureSize
+               local texUv = uv * self.textureSize
+               local intColor = vectors.rgbToInt(color)
+               if groupData.appliedColorMat[id] ~= intColor then
+                  if groupData.appliedColorMat[id] then
+                     groupData.appliedColorMat = {}
+                     tex:restore()
+                  end
+                  groupData.appliedColorMat[id] = intColor
+                  ---@diagnostic disable-next-line: redundant-parameter
+                  tex:applyMatrix(texUv.x, texUv.y, texSize.x, texSize.y, colorMat, true)
+                  tex:update()
+               end
+               modelColor = vec(1, 1, 1)
+            end
+         end
+         for _, model in pairs(groupData.modelparts) do
             model:visible(true)
-               :color(color)
-               :uvMatrix(uv)
+               :color(modelColor)
+               :uvMatrix(uvMat)
          end
       end
-      local toggableModels = group.enableModels and group.enableModels[id + 1]
-      if toggableModels then
-         local name = toggableModels[1]
-         if toggableModelsPriority[name] < group.distance then
-            toggableModelsPriority[name] = group.distance
-            local modelparts = self.toggableModels[name]
-            local modelUv = toggableModels[2] * modelparts.uvSize
-            for _, model in ipairs(modelparts) do
-               model:visible(true)
-                  :color(color)
-                  :uvPixels(modelUv)
+      local myToggableModels = group.enableModels and group.enableModels[id]
+      if myToggableModels then
+         for _, toggableModel in pairs(myToggableModels) do
+            local name = toggableModel[1]
+            if toggableModelsPriority[name] < group.distance then
+               toggableModelsPriority[name] = group.distance
+               toggableModels[name] = {
+                  toggableModel[2], -- uv
+                  color,
+                  colorMat
+               }
             end
          end
       end
    end
-   -- update outfit data
-   local newRenderedClothes = self:compressOutfit(outfit)
-   if self.renderedClothes ~= newRenderedClothes then
-      self.renderedClothes = newRenderedClothes
-      if self.clothesChangeFunc and not ignoreChangeFunc then
-         self.clothesChangeFunc()
+   for name, v in pairs(toggableModels) do
+      local modelparts = self.toggableModels[name]
+      local modelUv = v[1] * modelparts.uvSize
+      local color = v[2]
+      local colorMat = v[3]
+      if modelparts.texture then
+         local tex = modelparts.texture
+         local appliedColor = self.appliedColorMatToggable[name]
+         local id = tostring(v[1])
+         if colorMat then
+            local intColor = vectors.rgbToInt(color)
+            if appliedColor[id] ~= intColor then
+               if appliedColor[id] then
+                  appliedColor = {}
+                  self.appliedColorMatToggable[name] = appliedColor
+                  tex:restore()
+               end
+               appliedColor[id] = intColor
+               ---@diagnostic disable-next-line: redundant-parameter
+               tex:applyMatrix(modelUv.x, modelUv.y, modelparts.uvSize.x, modelparts.uvSize.y, colorMat, true)
+               tex:update()
+            end
+            color = vec(1, 1, 1)
+         elseif appliedColor[id] then
+            tex:restore():update()
+            self.appliedColorMatToggable[name] = {}
+         end
       end
+      for _, model in ipairs(modelparts) do
+         model:visible(true)
+            :color(color)
+            :uvPixels(modelUv)
+      end
+   end
+   -- call update func
+   if self.clothesChangeFunc and not ignoreChangeFunc then
+      self.clothesChangeFunc()
    end
 end
 
@@ -250,7 +362,6 @@ function clothesHandler:sync(saveConfig)
 end
 
 ---sets cloth, when cloth type is 0 it will turn off cloth group, will automatically sync, returns self for chaining
----@param self self
 ---@param clothGroup string
 ---@param clothType? number
 ---@param color? Vector3
