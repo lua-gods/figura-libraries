@@ -129,6 +129,7 @@ if conf.complicatedPlayerHeadEvents then
 end
 
 avatar:store("petpet", function(uuid, time)
+   if not player:isLoaded() then return end
    local entity = world.getEntity(uuid)
    if not entity then return true, true end -- no entity
    time = math.min(time or 10, 40)
