@@ -1,19 +1,10 @@
 -- Clothes Lib - By AuriaFoxGirl ^^
 -- https://github.com/lua-gods/figuraLibraries/tree/main/clothes/
 ---@class auria.clothes
+---@field copyTextures Texture[]?
+---@field copyTexturesToggable {[string]: Texture}?
 local lib = {}
----@class auria.clothes.Handler
----@field groups auria.clothes.group[]
----@field groupsData auria.clothes.groupData[]
----@field current {[string]: Vector4}
----@field currentCompressed string
----@field configName string?
----@field ping function
----@field toggableModels {[string]: auria.clothes.modelpartData}
----@field appliedColorMatToggable {[string]: {[string]: number}}
----@field textureSize Vector2
----@field renderedClothes string
----@field outfitOverride {[any]: {[string]: Vector4}} -- if outfit exists in this table it will be used instead of selected clothes e.g. could be used to change outfit while in water, remember to update clothes after changing it
+---@class auria.clothes.handler
 local clothesHandler = {}
 clothesHandler.__index = clothesHandler
 local emptyVec3 = vec(0, 0, 0)
@@ -46,7 +37,6 @@ end
 ---}
 ---@alias auria.clothes.groupData {
 ---clothesLimitX: number?,
----modelparts: ModelPart[],
 ---clothesLimitX: number,
 ---uvScale: Vector3,
 ---appliedColorMat: number[],
@@ -61,21 +51,30 @@ end
 ---@param groups auria.clothes.group[]
 ---@param defaultOutfit? {[string]: Vector4}
 ---@param configName? string -- if provided the clothes will be stored in config with this name
----@return auria.clothes.Handler
-function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, configName)
-   ---@type auria.clothes.Handler
+---@param allowCopy? boolean -- if enabled allows generating copy of clothes model with specific outfit
+---@return auria.clothes.handler
+function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, configName, allowCopy)
+   ---@class auria.clothes.handler
    local obj = {
       groups = groups,
       textureSize = textureSize,
       configName = configName,
+      ---@type {[any]: {[string]: Vector4}} -- if outfit exists in this table it will be used instead of selected clothes e.g. could be used to change outfit while in water, remember to update clothes after changing it
       outfitOverride = {},
+      ---@type {[string]: auria.clothes.modelpartData}
       toggableModels = {},
       groupsData = {},
       renderedClothes = '',
+      ---@type {[string]: Vector4}
       current = nil,
+      ---@type string
       currentCompressed = nil,
+      ---@type function?
       ping = nil,
+      ---@type {[string]: {[string]: number}}
       appliedColorMatToggable = {},
+      ---@type ModelPart[][]
+      groupsModelparts = {},
    }
    local groupsData = obj.groupsData
    setmetatable(obj, clothesHandler)
@@ -100,11 +99,12 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
       obj.ping = name
    end
    -- create data for modelparts
+   local groupsModelparts = obj.groupsModelparts
    local modelpartsData = {}
    for i, group in pairs(groups) do
       local groupData = {}
       groupsData[i] = groupData
-      groupData.modelparts = {}
+      groupsModelparts[i] = {}
       groupData.appliedColorMat = {}
       groupData.textureSize = group.texture and group.texture:getDimensions() or vec(16, 16) 
       groupData.clothesLimitX = groupData.textureSize.x / textureSize.x
@@ -134,12 +134,11 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
       local modelparts = modelpartsList[i]
       if modelparts.reUse then
          local group = groups[i]
-         local groupData = groupsData[i]
          for _, model in ipairs(modelparts) do
             model:visible(false)
                :setPrimaryTexture('CUSTOM', group.texture)
                :setSecondaryRenderType('NONE')
-            table.insert(groupData.modelparts, model)
+            table.insert(groupsModelparts[i], model)
          end
       else
          for _, model in ipairs(modelparts) do
@@ -153,12 +152,11 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
             local modelsGroup = model:newPart('clothes_'..model:getName()):remove()
             for _, v in pairs(groupsInfo) do
                local group = groups[v]
-               local groupData = groupsData[v]
                local newModel = model:copy('')
                   :visible(false)
                   :setPrimaryTexture('CUSTOM', group.texture)
                   :setSecondaryRenderType('NONE')
-               table.insert(groupData.modelparts, newModel)
+               table.insert(groupsModelparts[v], newModel)
                modelsGroup:addChild(newModel)
                local dist = group.distance
                for _, vertexGroup in pairs(newModel:getAllVertices()) do
@@ -176,6 +174,29 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
          end
       end
    end
+   -- copy textures
+   if allowCopy then
+      local tbl = {}
+      for i, group in pairs(groups) do
+         local tex = group.texture
+         if tex then
+            if group.colorMatrix then
+               tbl[i] = textures:copy(tex:getName()..".copy", tex)
+            else
+               tbl[i] = tex
+            end
+         end
+      end
+      obj.copyTextures = tbl
+      local tbl2 = {}
+      for i, modelparts in pairs(modelpartsList) do
+         local tex = modelparts.texture
+         if tex then
+            tbl2[i] = textures:copy(tex:getName()..".copy", tex)
+         end
+      end
+      obj.copyTexturesToggable = tbl2
+   end
    -- update
    if configName or defaultOutfit then
       obj:update()
@@ -184,23 +205,17 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
    return obj
 end
 
----updates clothes, returns self for chaining
----@param ignoreChangeFunc? boolean -- if true clothes change function will be ignored
-function clothesHandler:update(ignoreChangeFunc)
-   local a = avatar:getCurrentInstructions()
-   local b = client.getSystemTime()
-   local outfit = self.current
-   outfit = select(2, next(self.outfitOverride)) or outfit
-   local newRenderedClothes = self:compressOutfit(outfit)
-   if self.renderedClothes == newRenderedClothes then
-      return
-   end
-   self.renderedClothes = newRenderedClothes
+---@param self auria.clothes.handler
+---@param outfit {[string]: Vector4}
+---@param groupsModelparts ModelPart[][]
+---@param toggableModels auria.clothes.modelpartsData
+---@param allowColorMatrix boolean
+local function updateRaw(self, outfit, groupsModelparts, toggableModels, allowColorMatrix)
    -- reset toggable models
    ---@type {[string]: {[1]: Vector2, [2]: Vector3, [3]: Matrix4}}
-   local toggableModels = {}
+   local toggableModelsData = {}
    local toggableModelsPriority = {}
-   for name, modelparts in pairs(self.toggableModels) do
+   for name, modelparts in pairs(toggableModels) do
       toggableModelsPriority[name] = -1
       for _, model in ipairs(modelparts) do
          model:visible(false)
@@ -216,7 +231,9 @@ function clothesHandler:update(ignoreChangeFunc)
       local color = noColor and vec(1, 1, 1) or current.yzw --[[@as Vector3]]
       local colorMat
       if id < 1 then
-         for _, model in pairs(groupData.modelparts) do model:visible(false) end
+         for _, model in pairs(groupsModelparts[groupI]) do
+            model:visible(false)
+         end
       else
          local uv = vec(
             idUv % groupData.clothesLimitX,
@@ -226,7 +243,7 @@ function clothesHandler:update(ignoreChangeFunc)
          uvMat:translate(uv)
          uvMat:scale(groupData.uvScale)
          local modelColor = color
-         if group.colorMatrix and not noColor then
+         if group.colorMatrix and not noColor and allowColorMatrix then
             colorMat = group.colorMatrix(color, id)
             local tex = group.texture
             if tex then
@@ -246,7 +263,7 @@ function clothesHandler:update(ignoreChangeFunc)
                modelColor = vec(1, 1, 1)
             end
          end
-         for _, model in pairs(groupData.modelparts) do
+         for _, model in pairs(groupsModelparts[groupI]) do
             model:visible(true)
                :color(modelColor)
                :uvMatrix(uvMat)
@@ -258,7 +275,7 @@ function clothesHandler:update(ignoreChangeFunc)
             local name = toggableModel[1]
             if toggableModelsPriority[name] < group.distance then
                toggableModelsPriority[name] = group.distance
-               toggableModels[name] = {
+               toggableModelsData[name] = {
                   toggableModel[2], -- uv
                   color,
                   colorMat
@@ -267,7 +284,7 @@ function clothesHandler:update(ignoreChangeFunc)
          end
       end
    end
-   for name, v in pairs(toggableModels) do
+   for name, v in pairs(toggableModelsData) do
       local modelparts = self.toggableModels[name]
       local modelUv = v[1] * modelparts.uvSize
       local color = v[2]
@@ -290,21 +307,69 @@ function clothesHandler:update(ignoreChangeFunc)
                tex:update()
             end
             color = vec(1, 1, 1)
-         elseif appliedColor[id] then
+         elseif allowColorMatrix and appliedColor[id] then
             tex:restore():update()
             self.appliedColorMatToggable[name] = {}
          end
       end
-      for _, model in ipairs(modelparts) do
+      for _, model in ipairs(toggableModels[name]) do
          model:visible(true)
             :color(color)
             :uvPixels(modelUv)
       end
    end
+end
+
+---updates clothes, returns self for chaining
+---@param ignoreChangeFunc? boolean -- if true clothes change function will be ignored
+function clothesHandler:update(ignoreChangeFunc)
+   local outfit = self.current
+   outfit = select(2, next(self.outfitOverride)) or outfit
+   local newRenderedClothes = self:compressOutfit(outfit)
+   if self.renderedClothes == newRenderedClothes then
+      return
+   end
+   self.renderedClothes = newRenderedClothes
+   updateRaw(self, outfit, self.groupsModelparts, self.toggableModels, true)
    -- call update func
    if self.clothesChangeFunc and not ignoreChangeFunc then
       self.clothesChangeFunc()
    end
+end
+
+---@param outfit {[string]: Vector4}
+---@return ModelPart
+function clothesHandler:makeCopyWithOutfit(outfit)
+   if not self.copyTextures then
+      error("copying is not enabled")
+   end
+   local rootModel = models:newPart(""):remove()
+   local groupsModelparts = {}
+   local toggableModels = {}
+   for i, myModels in pairs(self.groupsModelparts) do
+      local tex = self.copyTextures[i]
+      local myModelparts = {}
+      groupsModelparts[i] = myModelparts
+      for _, v in pairs(myModels) do
+         local model = v:copy("")
+         model:setPrimaryTexture('CUSTOM', tex)
+         table.insert(myModelparts, model)
+         rootModel:addChild(model)
+      end
+   end
+   for name, modelparts in pairs(self.toggableModels) do
+      local tex = self.copyTexturesToggable[name]
+      local myModels = {}
+      toggableModels[name] = myModels
+      for _, v in ipairs(modelparts) do
+         local model = v:copy("")
+         model:setPrimaryTexture('CUSTOM', tex)
+         table.insert(myModels, model)
+         rootModel:addChild(model)
+      end
+   end
+   updateRaw(self, outfit, groupsModelparts, toggableModels, false)
+   return rootModel
 end
 
 ---compresses provided or current outfit, can be used when sending pings to make pings smaller
