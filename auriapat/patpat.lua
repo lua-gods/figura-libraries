@@ -10,7 +10,7 @@ local mod = {
    particle = "minecraft:heart",
 
    minPatDelay = 1, -- minimum delay between pats
-   maxPatRange = 15, -- max blocks for petting
+   maxPatRange = 8, -- max blocks for petting
 
    ---whitelist/blacklist for default filterPlayer function
    ---each filter has:
