@@ -161,18 +161,20 @@ end
 
 local patTarget = nil
 
-avatar:store("patpat.confirm", function()
+local patpatAvatarVars = {}
+
+function patpatAvatarVars.confirm()
    local target = patTarget
    patTarget = nil
    return target
-end)
+end
 
-avatar:store("patpat", function(uuid, mode, x, y, z)
+function patpatAvatarVars.pat(uuid, mode, x, y, z)
    if not player:isLoaded() then return end
    local entity = world.getEntity(uuid)
    if not entity then return end -- no entity
    -- verify uuid
-   local targetUuid = entity:getVariable("patpat.confirm")()
+   local targetUuid = entity:getVariable("catpat").confirm()
    if myUuid ~= targetUuid then
       return
    end
@@ -200,7 +202,9 @@ avatar:store("patpat", function(uuid, mode, x, y, z)
       pattedTime = 15
    end
    return true
-end)
+end
+
+avatar:store("catpat", patpatAvatarVars)
 
 ---@overload fun(uuid: string): string
 local function packUuid(uuid)
@@ -273,8 +277,8 @@ local function patpat(a, b, c)
       local ok = safePcall(function()
          local uuid = getUuidFromBlock(block)
          patTarget = uuid
-         local func = world.avatarVars()[uuid].patpat
-         if func(myUuid, 2, blockPos:unpack()) then
+         local patpatTbl = world.avatarVars()[uuid].catpat
+         if patpatTbl.pat(myUuid, 2, blockPos:unpack()) then
             patsAllowed = true
          end
       end)
@@ -294,11 +298,11 @@ local function patpat(a, b, c)
       callEvent("patting", entity)
       return true
    end
-   local func = entity:getVariable("patpat")
+   local patpatTbl = entity:getVariable("catpat")
    local patsAllowed = false
    patTarget = entity:getUUID()
    local ok = safePcall(function()
-      if func(myUuid, 1) then
+      if patpatTbl.pat(myUuid, 1) then
          patsAllowed = true
       end
    end)
