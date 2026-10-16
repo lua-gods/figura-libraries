@@ -1,4 +1,4 @@
-# patpat
+# patpat (archived)
 Simple figura lua script that allows to pet people and player heads
 you can pet by clicking or holding right mouse buttom (can be configured) while looking at player or player head
 
