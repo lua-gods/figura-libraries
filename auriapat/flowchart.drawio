@@ -1,6 +1,6 @@
 <mxfile host="app.diagrams.net">
   <diagram name="Strona-1" id="59NbVz_7Tyf-LQioQAAW">
-    <mxGraphModel dx="1846" dy="1076" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+    <mxGraphModel dx="1366" dy="796" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
@@ -8,28 +8,28 @@
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-1" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;" value="Right click&lt;br&gt;player/skull" vertex="1">
-          <mxGeometry height="70" width="120" x="220" y="130" as="geometry" />
+          <mxGeometry height="70" width="120" x="56.879999999999995" y="125" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-5" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-4" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="1mCFLly-QqHRzoywGeJb-2" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;call target&#39;s&lt;/div&gt;&lt;div&gt;`catpat.pat` function&lt;br&gt;with own uuid and other params&lt;/div&gt;&lt;div&gt;catpat.pat(avatar:getUUID())&lt;/div&gt;" vertex="1">
-          <mxGeometry height="70" width="186.25" x="186.87" y="320" as="geometry" />
+        <mxCell id="1mCFLly-QqHRzoywGeJb-2" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;call target&#39;s&lt;/div&gt;&lt;div&gt;`catpat.pat` function&lt;br&gt;with own uuid and mode 1&lt;/div&gt;&lt;div&gt;catpat.pat(avatar:getUUID(), 1)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="186.25" x="215.63" y="330" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-15" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="1mCFLly-QqHRzoywGeJb-25" value="">
           <mxGeometry relative="1" x="0.0135" as="geometry">
             <Array as="points">
-              <mxPoint x="600" y="470" />
+              <mxPoint x="600" y="590" />
             </Array>
-            <mxPoint x="330" y="469.9999999999999" as="targetPoint" />
+            <mxPoint x="330" y="609.9999999999999" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-4" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;get avatar vars from received uuid and call&lt;/div&gt;&lt;div&gt;confirmer function catpat.confirm()&lt;/div&gt;" vertex="1">
-          <mxGeometry height="60" width="120" x="540" y="325" as="geometry" />
+          <mxGeometry height="70" width="132.5" x="533.75" y="440" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-6" edge="1" parent="1" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;" value="">
           <mxGeometry height="50" relative="1" width="50" as="geometry">
-            <mxPoint x="439.89" y="1050" as="sourcePoint" />
+            <mxPoint x="439" y="1150" as="sourcePoint" />
             <mxPoint x="439.48" y="60" as="targetPoint" />
           </mxGeometry>
         </mxCell>
@@ -39,11 +39,11 @@
         <mxCell id="1mCFLly-QqHRzoywGeJb-8" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;div&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;Player B&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font style=&quot;font-size: 16px;&quot;&gt;patted&lt;/font&gt;&lt;/div&gt;" vertex="1">
           <mxGeometry height="60" width="110" x="545" y="65" as="geometry" />
         </mxCell>
-        <mxCell id="1mCFLly-QqHRzoywGeJb-13" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-2">
+        <mxCell id="xfN8WXWQCav6YH-USz7C-42" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-11" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="xfN8WXWQCav6YH-USz7C-41" value="">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-11" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;save&lt;/div&gt;&lt;div&gt;target&#39;s uuid to variable as targetUuid&lt;/div&gt;" vertex="1">
-          <mxGeometry height="60" width="132.5" x="213.75" y="230" as="geometry" />
+          <mxGeometry height="60" width="132.5" x="50.629999999999995" y="225" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-31" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-23" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-30" value="">
           <mxGeometry relative="1" as="geometry" />
@@ -62,17 +62,17 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-23" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="is returned uuid equals to yours (player B)" vertex="1">
-          <mxGeometry height="90" width="145" x="500" y="495" as="geometry" />
+          <mxGeometry height="90" width="145" x="500" y="635" as="geometry" />
         </mxCell>
-        <mxCell id="1mCFLly-QqHRzoywGeJb-28" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="1mCFLly-QqHRzoywGeJb-23">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="xfN8WXWQCav6YH-USz7C-39" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-25" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-23">
+          <mxGeometry relative="1" x="0.0732" as="geometry">
             <Array as="points">
-              <mxPoint x="273.8" y="540" />
+              <mxPoint x="280.1" y="680" />
             </Array>
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-25" parent="1" style="whiteSpace=wrap;html=1;" value="return targetUuid (or nil) and set&amp;nbsp;targetUuid to nil" vertex="1">
-          <mxGeometry height="60" width="120" x="213.75" y="440" as="geometry" />
+          <mxGeometry height="60" width="132.5" x="213.75" y="560" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-36" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-33">
           <mxGeometry relative="1" as="geometry" />
@@ -91,32 +91,32 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-30" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="Is patter whitelisted" vertex="1">
-          <mxGeometry height="80" width="120" x="512.5" y="630" as="geometry" />
+          <mxGeometry height="80" width="120" x="512.5" y="770" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-47" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-33" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-41">
-          <mxGeometry relative="1" as="geometry">
+          <mxGeometry relative="1" x="-0.0068" as="geometry">
             <Array as="points">
-              <mxPoint x="770" y="850" />
+              <mxPoint x="765" y="990" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="1mCFLly-QqHRzoywGeJb-33" parent="1" style="whiteSpace=wrap;html=1;" value="return false" vertex="1">
-          <mxGeometry height="30" width="80" x="730" y="655" as="geometry" />
+        <mxCell id="1mCFLly-QqHRzoywGeJb-33" parent="1" style="whiteSpace=wrap;html=1;" value="return false/nil" vertex="1">
+          <mxGeometry height="30" width="90" x="720" y="795" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-57" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-39" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;">
           <mxGeometry relative="1" as="geometry">
-            <mxPoint x="572.5" y="850" as="targetPoint" />
+            <mxPoint x="572.5" y="990" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-39" parent="1" style="whiteSpace=wrap;html=1;" value="return true" vertex="1">
-          <mxGeometry height="30" width="97.5" x="523.75" y="797.5" as="geometry" />
+          <mxGeometry height="30" width="97.5" x="523.75" y="937.5" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-48" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-50">
           <mxGeometry relative="1" x="-0.64" as="geometry">
             <Array as="points">
-              <mxPoint x="120" y="850" />
+              <mxPoint x="120" y="990" />
             </Array>
-            <mxPoint x="160" y="850" as="targetPoint" />
+            <mxPoint x="160" y="990" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-49" connectable="0" parent="1mCFLly-QqHRzoywGeJb-48" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="No" vertex="1">
@@ -133,25 +133,56 @@
           </mxGeometry>
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-41" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="is returned value true" vertex="1">
-          <mxGeometry height="80" width="120" x="220" y="810" as="geometry" />
+          <mxGeometry height="80" width="120" x="220" y="950" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-50" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;" value="End" vertex="1">
-          <mxGeometry height="45" width="80" x="80" y="950" as="geometry" />
+          <mxGeometry height="45" width="80" x="80" y="1090" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-54" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-51" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-50">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-51" parent="1" style="whiteSpace=wrap;html=1;" value="swing arm" vertex="1">
-          <mxGeometry height="45" width="120" x="220" y="950" as="geometry" />
+          <mxGeometry height="45" width="120" x="220" y="1090" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-58" edge="1" parent="1" source="1mCFLly-QqHRzoywGeJb-55" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-39">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="1mCFLly-QqHRzoywGeJb-55" parent="1" style="whiteSpace=wrap;html=1;" value="call events" vertex="1">
-          <mxGeometry height="30" width="97.5" x="523.75" y="750" as="geometry" />
+          <mxGeometry height="30" width="97.5" x="523.75" y="890" as="geometry" />
         </mxCell>
         <mxCell id="Z0lWbnZzKj7gwlUvs8_--2" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;Auria&#39;s new patpat protocol&lt;/font&gt;" vertex="1">
           <mxGeometry height="40" width="256.25" x="310" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-45" edge="1" parent="1" source="xfN8WXWQCav6YH-USz7C-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="xfN8WXWQCav6YH-USz7C-44">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-46" connectable="0" parent="xfN8WXWQCav6YH-USz7C-45" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="Yes" vertex="1">
+          <mxGeometry relative="1" x="-0.1536" as="geometry">
+            <mxPoint y="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-47" edge="1" parent="1" source="xfN8WXWQCav6YH-USz7C-41" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-48" connectable="0" parent="xfN8WXWQCav6YH-USz7C-47" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" value="No" vertex="1">
+          <mxGeometry relative="1" x="-0.0024" as="geometry">
+            <mxPoint x="-4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-41" parent="1" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;" value="is patting player skull" vertex="1">
+          <mxGeometry height="80" width="110" x="61.879999999999995" y="325" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-49" edge="1" parent="1" source="xfN8WXWQCav6YH-USz7C-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="1mCFLly-QqHRzoywGeJb-4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-44" parent="1" style="whiteSpace=wrap;html=1;" value="&lt;div&gt;call target&#39;s&lt;/div&gt;&lt;div&gt;`catpat.pat` function&lt;br&gt;with own uuid, mode 2 and pos&lt;/div&gt;&lt;div&gt;catpat.pat(avatar:getUUID(), 2, x, y, z)&lt;/div&gt;" vertex="1">
+          <mxGeometry height="70" width="213.75" x="10.01" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-51" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&amp;nbsp;" vertex="1">
+          <mxGeometry height="30" width="30" as="geometry" />
+        </mxCell>
+        <mxCell id="xfN8WXWQCav6YH-USz7C-52" parent="1" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;rounded=0;" value="&amp;nbsp;" vertex="1">
+          <mxGeometry height="30" width="30" x="790" y="1120" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
