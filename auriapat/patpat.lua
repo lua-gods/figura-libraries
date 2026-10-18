@@ -70,7 +70,7 @@ table.insert(mod.events.oncePat, function(entity)
       math.random(),
       math.random() - 0.5
    ) * bBox
-   particles["minecraft:heart"]
+   particles[mod.particle]
       :pos(pos)
       :scale(1)
       :spawn()
@@ -82,7 +82,7 @@ table.insert(mod.events.skullOncePat, function(pos, entity)
       math.random(),
       math.random() - 0.5
    ) * 0.75 + vec(0.5, 0, 0.5)
-   particles["minecraft:heart"]
+   particles[mod.particle]
       :pos(pos)
       :scale(1)
       :spawn()
@@ -96,7 +96,7 @@ table.insert(mod.events.pattingEntity, function(target)
       math.random(),
       math.random() - 0.5
    ) * bBox
-   particles["minecraft:heart"]
+   particles[mod.particle]
       :pos(pos)
       :scale(1)
       :spawn()
@@ -159,6 +159,36 @@ function events.tick()
    end
 end
 
+---@param entity Entity
+---@param mode number
+---@param pos Vector3?
+---@return boolean?
+function mod.receivePats(entity, mode, pos)
+   -- rate limit
+   if pattedDelay >= 1 then
+      return
+   end
+   pattedDelay = mod.minPatDelay
+   if (entity:getPos() - player:getPos()):length() > mod.maxPatRange then
+      return
+   end
+   -- check if petting allowed
+   if not mod.filterPlayer(entity, mode == 2) then
+      return
+   end
+   -- call events
+   if mode == 2 then
+      callEventPcalled("skullOncePat", pos:copy(), entity)
+   elseif mode == 1 then
+      callEventPcalled("oncePat", entity)
+      if pattedTime == 0 then
+         callEvent("togglePat", true, entity)
+      end
+      pattedTime = 15
+   end
+   return true
+end
+
 local patTarget = nil
 
 local patpatAvatarVars = {}
@@ -178,30 +208,12 @@ function patpatAvatarVars.pat(uuid, mode, x, y, z)
    if myUuid ~= targetUuid then
       return
    end
-   -- rate limit
-   if pattedDelay >= 1 then
-      return
-   end
-   pattedDelay = mod.minPatDelay
-   if (entity:getPos() - player:getPos()):length() > mod.maxPatRange then
-      return
-   end
-   -- check if petting allowed
-   if not mod.filterPlayer(entity, mode == 2) then
-      return
-   end
-   -- call events
    if mode == 2 then
       local pos = vec(x, y, z):floor()
-      callEventPcalled("skullOncePat", pos, entity)
+      return mod.receivePats(entity, 2, pos)
    elseif mode == 1 then
-      callEventPcalled("oncePat", entity)
-      if pattedTime == 0 then
-         callEvent("togglePat", true, entity)
-      end
-      pattedTime = 15
+      return mod.receivePats(entity, 1)
    end
-   return true
 end
 
 avatar:store("catpat", patpatAvatarVars)
@@ -245,7 +257,7 @@ end
 ---found out by bitslayn
 ---@param func function
 ---@return boolean
-local function safePcall(func)
+function mod.safePcall(func)
    local v = vec(1, 2)
    local ok = pcall(v.applyFunc, v, function(i)
       if i == 1 then
@@ -255,6 +267,35 @@ local function safePcall(func)
    end)
    return ok
 end
+
+mod.patHandlers = {}
+-- stupid language server, doesnt accept table.insert
+
+---@param func (fun(value: Entity|Vector3, uuid: string, vars: table): boolean)
+function mod.patHandlers.add(func)
+   table.insert(mod.patHandlers, func)
+end
+
+mod.patHandlers.add(function(value, uuid, vars)
+   local patsAllowed = false
+   patTarget = uuid
+   local ok = mod.safePcall(function()
+      if type(value) == "Vector3" then
+         if vars.catpat.pat(myUuid, 2, value:unpack()) then
+            patsAllowed = true
+         end
+      else
+         if vars.catpat.pat(myUuid, 1) then
+            patsAllowed = true
+         end
+      end
+   end)
+   patTarget = nil
+   if ok and patsAllowed then
+      return true
+   end
+   return false
+end)
 
 ---@param a string|number
 ---@param b number?
@@ -273,19 +314,20 @@ local function patpat(a, b, c)
       blockPos = blockPos + receivedPos % 64 - 32 * offset
       local block = world.getBlockState(blockPos)
       -- call petpet function
-      local patsAllowed = false
-      local ok = safePcall(function()
-         local uuid = getUuidFromBlock(block)
-         patTarget = uuid
-         local patpatTbl = world.avatarVars()[uuid].catpat
-         if patpatTbl.pat(myUuid, 2, blockPos:unpack()) then
-            patsAllowed = true
-         end
+      local uuid, avatarVars
+      local ok = mod.safePcall(function()
+         uuid = getUuidFromBlock(block)
+         avatarVars = world.avatarVars()[uuid]
       end)
-      patTarget = nil
-      if ok and patsAllowed then
-         callEvent("patting", blockPos)
-         return true
+      if not ok then
+         return false
+      end
+      local pos = block:getPos()
+      for i, v in ipairs(mod.patHandlers) do
+         if v(pos, uuid, avatarVars) then
+            callEvent("patting", blockPos)
+            return true
+         end
       end
       return false
    end
@@ -298,18 +340,19 @@ local function patpat(a, b, c)
       callEvent("patting", entity)
       return true
    end
-   local patpatTbl = entity:getVariable("catpat")
-   local patsAllowed = false
-   patTarget = entity:getUUID()
-   local ok = safePcall(function()
-      if patpatTbl.pat(myUuid, 1) then
-         patsAllowed = true
-      end
+   local uuid = entity:getUUID()
+   local avatarVars
+   local ok = mod.safePcall(function()
+      avatarVars = entity:getVariable()
    end)
-   patTarget = nil
-   if ok and patsAllowed then
-      callEvent("patting", entity)
-      return true
+   if not ok then
+      return false
+   end
+   for i, v in ipairs(mod.patHandlers) do
+      if v(entity, uuid, avatarVars) then
+         callEvent("patting", entity)
+         return true
+      end
    end
    return false
 end

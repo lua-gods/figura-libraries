@@ -1,0 +1,68 @@
+local patpat = require("libraries.patpat")
+
+local myUuid = avatar:getUUID()
+local patCubedVars = {
+   protocol = 1,
+}
+
+local acceptedFuncs
+local canAcceptFuncs = false
+function patCubedVars.acceptor(tbl, validate)
+   if canAcceptFuncs then
+      acceptedFuncs = tbl
+      canAcceptFuncs = false
+   end
+end
+
+local id = client.intUUIDToString(client.generateUUID())
+patCubedVars.session_id = id
+local function validateSession()
+   return world.avatarVars()[myUuid].PatCubed.session_id == id
+end
+patCubedVars.validate = validateSession
+
+function patCubedVars.prompter(uuid)
+   local vars = world.avatarVars()[uuid].PatCubed
+   if vars.protocol ~= 1 then
+      return
+   end
+   local entity = world.getEntity(uuid)
+   vars.acceptor({
+      player = patpat.filterPlayer(entity, false) and function()
+         if not validateSession() then
+            return false
+         end
+         local e = world.getEntity(uuid)
+         local ok = patpat.receivePats(e, 1)
+         return ok or false
+      end or nil,
+      skull = patpat.filterPlayer(entity, true) and function(time, x, y, z)
+         if not validateSession() then
+            return false
+         end
+         local e = world.getEntity(uuid)
+         local ok = patpat.receivePats(e, 2, vec(x, y, z))
+         return ok or false
+      end or nil,
+   }, validateSession)
+end
+
+avatar:store("PatCubed", patCubedVars)
+
+patpat.patHandlers.add(function(value, uuid, vars)
+   local canPat
+   local ok = patpat.safePcall(function()
+      canAcceptFuncs = true
+      vars.PatCubed.prompter(myUuid)
+      if type(value) == "Vector3" then
+         canPat = acceptedFuncs.skull(15, value:unpack())
+      else
+         canPat = acceptedFuncs.player(15)
+      end
+   end)
+   acceptedFuncs = nil
+   if ok and canPat ~= false then
+      return true
+   end
+   return false
+end)
