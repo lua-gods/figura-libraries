@@ -169,7 +169,13 @@ function mod.receivePats(entity, mode, pos)
       return
    end
    pattedDelay = mod.minPatDelay
-   if (entity:getPos() - player:getPos()):length() > mod.maxPatRange then
+   local myPos
+   if mode == 2 then
+      myPos = pos
+   elseif mode == 1 then
+      myPos = player:getPos()
+   end
+   if (entity:getPos() - myPos):length() > mod.maxPatRange then
       return
    end
    -- check if petting allowed
