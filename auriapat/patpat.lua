@@ -9,7 +9,7 @@ local mod = {
    -- can be changed in code below too
    particle = "minecraft:heart",
 
-   minPatDelay = 1, -- minimum delay between pats
+   minPatDelay = 50, -- minimum delay between pats in ms
    maxPatRange = 8, -- max blocks for petting
 
    ---whitelist/blacklist for default filterPlayer function
@@ -142,13 +142,13 @@ local function callEventPcalled(eventName, ...)
 end
 
 local pattedTime = 0
-local pattedDelay = 0
+local minPatTime = client.getSystemTime()
 
 function events.tick()
    if eventError then
       error(eventError)
    end
-   pattedDelay = math.max(pattedDelay - 1, 0)
+   minPatTime = math.max(minPatTime - 1, 0)
    if pattedTime <= 0 then
       return
    end
@@ -165,10 +165,11 @@ end
 ---@return boolean?
 function mod.receivePats(entity, mode, pos)
    -- rate limit
-   if pattedDelay >= 1 then
+   local sysTime = client.getSystemTime()
+   if minPatTime > sysTime then
       return
    end
-   pattedDelay = mod.minPatDelay
+   minPatTime = sysTime + mod.minPatDelay
    local myPos
    if mode == 2 then
       myPos = pos
