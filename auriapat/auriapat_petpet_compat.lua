@@ -15,14 +15,14 @@ local function spawnParticle(pos, bBox)
 end
 
 patpat.patHandlers.add(function(value, uuid, vars)
-   if vars["patpat.noPats"] then
-      return false
-   end
-   if not (vars["petpet"] or vars["patpat.yesPats"]) then
-      return false
-   end
-   local noPats
+   local noPats = true
    local ok = patpat.safePcall(function()
+      if vars["patpat.noPats"] then
+         return false
+      end
+      if not (vars["petpet"] or vars["patpat.yesPats"]) then
+         return false
+      end
       if type(value) == "Vector3" then
          noPats = vars["petpet.playerHead"](myUuid, 15, value:unpack())
       else
