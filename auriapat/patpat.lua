@@ -180,6 +180,9 @@ function mod.receivePats(entity, mode, pos)
    if mode == 2 then
       callEventPcalled("skullOncePat", pos:copy(), entity)
    elseif mode == 1 then
+      if not player:isLoaded() then
+         return
+      end
       callEventPcalled("oncePat", entity)
       if pattedTime == 0 then
          callEvent("togglePat", true, entity)
@@ -200,7 +203,6 @@ function patpatAvatarVars.confirm()
 end
 
 function patpatAvatarVars.pat(uuid, mode, x, y, z)
-   if not player:isLoaded() then return end
    local entity = world.getEntity(uuid)
    if not entity then return end -- no entity
    -- verify uuid
