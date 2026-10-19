@@ -21,14 +21,19 @@ local function validateSession()
 end
 patCubedVars.validate = validateSession
 
-function patCubedVars.prompter(uuid)
+local function prompter(uuid)
    local vars = world.avatarVars()[uuid].PatCubed
    if vars.protocol ~= 1 then
       return
    end
    local entity = world.getEntity(uuid)
+   local playerFilter = patpat.filterPlayer(entity, false)
+   local skullFilter = patpat.filterPlayer(entity, true)
+   if not playerFilter and not skullFilter then
+      return
+   end
    vars.acceptor({
-      player = patpat.filterPlayer(entity, false) and function()
+      player = playerFilter and function()
          if not validateSession() then
             return false
          end
@@ -36,7 +41,7 @@ function patCubedVars.prompter(uuid)
          local ok = patpat.receivePats(e, 1)
          return ok or false
       end or nil,
-      skull = patpat.filterPlayer(entity, true) and function(time, x, y, z)
+      skull = skullFilter and function(time, x, y, z)
          if not validateSession() then
             return false
          end
@@ -45,6 +50,16 @@ function patCubedVars.prompter(uuid)
          return ok or false
       end or nil,
    }, validateSession)
+end
+
+function patCubedVars.prompter(uuid)
+   if uuid then
+      prompter(uuid)
+   else
+      for _, v in pairs(world.getPlayers()) do
+         prompter(v:getUUID())
+      end
+   end
 end
 
 avatar:store("PatCubed", patCubedVars)
