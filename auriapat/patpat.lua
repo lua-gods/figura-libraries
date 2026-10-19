@@ -172,6 +172,9 @@ function mod.receivePats(entity, mode, pos)
    minPatTime = sysTime + mod.minPatDelay
    local myPos
    if mode == 2 then
+      if type(pos) ~= "Vector3" then
+         return
+      end
       myPos = pos
    elseif mode == 1 then
       myPos = player:getPos()
