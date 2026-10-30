@@ -5,11 +5,14 @@ local mod = {
    requireEmptyOffHand = false,
    sneakToPat = true,
 
+   holdFor = 1, -- default amount of ticks before patting stops
+   holdForLimit = 40, -- maximum time for holdFor
+
    -- particle that will be used when patted/patting entity
    -- can be changed in code below too
    particle = "minecraft:heart",
 
-   minPatDelay = 50, -- minimum delay between pats in ms
+   minPatDelay = 75, -- minimum delay between pats in ms
    maxPatRange = 8, -- max blocks for petting
 
    ---whitelist/blacklist for default filterPlayer function
@@ -39,11 +42,11 @@ local mod = {
       "minecraft:area_effect_cloud", "minecraft:interaction",
    },
 
-   selfPat = false, -- for debugging
+   selfPat = true, -- for debugging
 }
 
 mod.events = {
-   ---@type fun(entity: Entity)[]
+   ---@type (fun(entity: Entity): boolean?)[]
    oncePat = {},
    ---@type function[]
    whilePat = {},
@@ -162,8 +165,9 @@ end
 ---@param entity Entity
 ---@param mode number
 ---@param pos Vector3?
+---@param time number?
 ---@return boolean?
-function mod.receivePats(entity, mode, pos)
+function mod.receivePats(entity, mode, pos, time)
    -- rate limit
    local sysTime = client.getSystemTime()
    if minPatTime > sysTime then
@@ -193,42 +197,27 @@ function mod.receivePats(entity, mode, pos)
       if not player:isLoaded() then
          return
       end
-      callEventPcalled("oncePat", entity)
-      if pattedTime == 0 then
-         callEvent("togglePat", true, entity)
+      -- do not swap to math.clamp, as it doesnt type check
+      local newPatTime = math.min(time or mod.holdFor, mod.holdForLimit)
+      newPatTime = math.max(newPatTime, 0)
+      local output = callEventPcalled("oncePat", entity)
+      for _, v in pairs(output) do
+         if v[1] then
+            return
+         end
       end
-      pattedTime = 15
+      if pattedTime == 0 then
+         callEventPcalled("togglePat", true, entity)
+      end
+      pattedTime = newPatTime
+      if pattedTime == 0 then
+         callEventPcalled("togglePat", false)
+      end
    end
    return true
 end
 
 local patTarget = nil
-
-local patpatAvatarVars = {}
-
-function patpatAvatarVars.confirm()
-   local target = patTarget
-   patTarget = nil
-   return target
-end
-
-function patpatAvatarVars.pat(uuid, mode, x, y, z)
-   local entity = world.getEntity(uuid)
-   if not entity then return end -- no entity
-   -- verify uuid
-   local targetUuid = entity:getVariable("catpat").confirm()
-   if myUuid ~= targetUuid then
-      return
-   end
-   if mode == 2 then
-      local pos = vec(x, y, z):floor()
-      return mod.receivePats(entity, 2, pos)
-   elseif mode == 1 then
-      return mod.receivePats(entity, 1)
-   end
-end
-
-avatar:store("catpat", patpatAvatarVars)
 
 ---@overload fun(uuid: string): string
 local function packUuid(uuid)
@@ -280,6 +269,20 @@ function mod.safePcall(func)
    return ok
 end
 
+---@param fallback string
+---@return string
+function mod.getCaller(fallback)
+   return fallback
+end
+
+---@diagnostic disable-next-line: undefined-global
+if silly and silly.backports and silly.backports.getCaller then
+   function mod.getCaller(fallback)
+      ---@diagnostic disable-next-line: undefined-global
+      return silly.backports:getCaller() or fallback
+   end
+end
+
 mod.patHandlers = {}
 -- stupid language server, doesnt accept table.insert
 
@@ -288,18 +291,45 @@ function mod.patHandlers.add(func)
    table.insert(mod.patHandlers, func)
 end
 
+-- new patpat standard
+mod.patHandlers.add(function(value, uuid, vars)
+   local canPat = false
+   local ok = mod.safePcall(function()
+      if type(value) == "Vector3" then
+         canPat = vars.patpat.skull(myUuid, value.x, value.y, value.z, mod.holdFor)
+      else
+         canPat = vars.patpat.player(myUuid, mod.holdFor)
+      end
+   end)
+   if ok and canPat then
+      return true
+   end
+   return false
+end)
+
+avatar:store("patpat", {
+   player = function(uuid, time)
+      uuid = mod.getCaller(uuid)
+      local entity = world.getEntity(uuid)
+      return mod.receivePats(entity, 1, nil, time)
+   end,
+   skull = function(uuid, x, y, z, time)
+      uuid = mod.getCaller(uuid)
+      local entity = world.getEntity(uuid)
+      local pos = vec(x, y, z)
+      return mod.receivePats(entity, 2, pos, time)
+   end,
+})
+
+-- catpat
 mod.patHandlers.add(function(value, uuid, vars)
    local patsAllowed = false
    patTarget = uuid
    local ok = mod.safePcall(function()
       if type(value) == "Vector3" then
-         if vars.catpat.pat(myUuid, 2, value:unpack()) then
-            patsAllowed = true
-         end
+         patsAllowed = vars.catpat.pat(myUuid, 2, value:unpack())
       else
-         if vars.catpat.pat(myUuid, 1) then
-            patsAllowed = true
-         end
+         patsAllowed = vars.catpat.pat(myUuid, 1)
       end
    end)
    patTarget = nil
@@ -308,6 +338,32 @@ mod.patHandlers.add(function(value, uuid, vars)
    end
    return false
 end)
+
+local catpatAvatarVars = {}
+
+function catpatAvatarVars.confirm()
+   local target = patTarget
+   patTarget = nil
+   return target
+end
+
+function catpatAvatarVars.pat(uuid, mode, x, y, z)
+   local entity = world.getEntity(uuid)
+   if not entity then return end -- no entity
+   -- verify uuid
+   local targetUuid = entity:getVariable("catpat").confirm()
+   if myUuid ~= targetUuid then
+      return
+   end
+   if mode == 2 then
+      local pos = vec(x, y, z):floor()
+      return mod.receivePats(entity, 2, pos)
+   elseif mode == 1 then
+      return mod.receivePats(entity, 1)
+   end
+end
+
+avatar:store("catpat", catpatAvatarVars)
 
 ---@param a string|number
 ---@param b number?

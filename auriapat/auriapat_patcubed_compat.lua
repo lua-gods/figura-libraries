@@ -33,12 +33,12 @@ local function prompter(uuid)
       return
    end
    vars.acceptor({
-      player = playerFilter and function()
+      player = playerFilter and function(time)
          if not validateSession() then
             return false
          end
          local e = world.getEntity(uuid)
-         local ok = patpat.receivePats(e, 1)
+         local ok = patpat.receivePats(e, 1, nil, time)
          return ok or false
       end or nil,
       skull = skullFilter and function(time, x, y, z)
@@ -46,7 +46,7 @@ local function prompter(uuid)
             return false
          end
          local e = world.getEntity(uuid)
-         local ok = patpat.receivePats(e, 2, vec(x, y, z))
+         local ok = patpat.receivePats(e, 2, vec(x, y, z), time)
          return ok or false
       end or nil,
    }, validateSession)
@@ -70,9 +70,9 @@ patpat.patHandlers.add(function(value, uuid, vars)
       canAcceptFuncs = true
       vars.PatCubed.prompter(myUuid)
       if type(value) == "Vector3" then
-         canPat = acceptedFuncs.skull(15, value:unpack())
+         canPat = acceptedFuncs.skull(patpat.holdFor, value:unpack())
       else
-         canPat = acceptedFuncs.player(15)
+         canPat = acceptedFuncs.player(patpat.holdFor)
       end
    end)
    acceptedFuncs = nil

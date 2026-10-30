@@ -24,9 +24,9 @@ patpat.patHandlers.add(function(value, uuid, vars)
          return false
       end
       if type(value) == "Vector3" then
-         noPats, noHearts = vars["petpet.playerHead"](myUuid, 15, value:unpack())
+         noPats, noHearts = vars["petpet.playerHead"](myUuid, patpat.holdFor, value:unpack())
       else
-         noPats, noHearts = vars["petpet"](myUuid, 15)
+         noPats, noHearts = vars["petpet"](myUuid, patpat.holdFor)
       end
       if vars['patpat.noHearts'] then
          noHearts = true
