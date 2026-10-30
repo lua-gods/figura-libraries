@@ -42,7 +42,7 @@ local mod = {
       "minecraft:area_effect_cloud", "minecraft:interaction",
    },
 
-   selfPat = true, -- for debugging
+   selfPat = false, -- for debugging
 }
 
 mod.events = {
