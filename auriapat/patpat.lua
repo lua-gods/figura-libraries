@@ -1,4 +1,5 @@
 -- config
+---@class auria.patpat
 local mod = {
    keybind = "key.mouse.right", -- keybind that will be used for patpat
    patDelay = 3, -- delay between pats when holding patpat key in ticks

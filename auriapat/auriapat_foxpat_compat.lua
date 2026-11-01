@@ -1,4 +1,4 @@
-local patpat = require("libraries.patpat")
+local patpat = require("./patpat") ---@type auria.patpat
 
 local myUuid = avatar:getUUID()
 
