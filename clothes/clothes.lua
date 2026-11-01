@@ -63,6 +63,10 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
       outfitOverride = {},
       ---@type {[string]: auria.clothes.modelpartData}
       toggableModels = {},
+      ---@type ModelPart[][]
+      modelpartsCopy = {},
+      ---@type {[string]: ModelPart[]}
+      toggableModelsCopy = {},
       groupsData = {},
       renderedClothes = '',
       ---@type {[string]: Vector4}
@@ -174,20 +178,20 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
          end
       end
    end
-   -- copy textures
+   -- copy textures and modelparts
    if allowCopy then
-      local tbl = {}
+      local texCopy = {}
       for i, group in pairs(groups) do
          local tex = group.texture
          if tex then
             if group.colorMatrix then
-               tbl[i] = textures:copy(tex:getName()..".copy", tex)
+               texCopy[i] = textures:copy(tex:getName()..".copy", tex)
             else
-               tbl[i] = tex
+               texCopy[i] = tex
             end
          end
       end
-      obj.copyTextures = tbl
+      obj.copyTextures = texCopy
       local tbl2 = {}
       for i, modelparts in pairs(modelpartsList) do
          local tex = modelparts.texture
@@ -196,6 +200,23 @@ function lib.new(name, textureSize, modelpartsList, groups, defaultOutfit, confi
          end
       end
       obj.copyTexturesToggable = tbl2
+
+      obj.modelpartsCopy = {}
+      for i, v in pairs(obj.groupsModelparts) do
+         local tbl = {}
+         obj.modelpartsCopy[i] = tbl
+         for k, v2 in pairs(v) do
+            tbl[k] = v2:copy("")
+         end
+      end
+      obj.toggableModelsCopy = {}
+      for i, v in pairs(obj.toggableModels) do
+         local tbl = {}
+         obj.toggableModelsCopy[i] = tbl
+         for k, v2 in ipairs(v) do
+            tbl[k] = v2:copy("")
+         end
+      end
    end
    -- update
    if configName or defaultOutfit then
@@ -346,7 +367,7 @@ function clothesHandler:makeCopyWithOutfit(outfit)
    local rootModel = models:newPart(""):remove()
    local groupsModelparts = {}
    local toggableModels = {}
-   for i, myModels in pairs(self.groupsModelparts) do
+   for i, myModels in pairs(self.modelpartsCopy) do
       local tex = self.copyTextures[i]
       local myModelparts = {}
       groupsModelparts[i] = myModelparts
@@ -357,7 +378,7 @@ function clothesHandler:makeCopyWithOutfit(outfit)
          rootModel:addChild(model)
       end
    end
-   for name, modelparts in pairs(self.toggableModels) do
+   for name, modelparts in pairs(self.toggableModelsCopy) do
       local tex = self.copyTexturesToggable[name]
       local myModels = {}
       toggableModels[name] = myModels
