@@ -81,3 +81,7 @@ patpat.patHandlers.add(function(value, uuid, vars)
    end
    return false
 end)
+
+table.insert(patpat.securePatChecks, function(vars)
+   return vars.PatCubed ~= nil
+end)

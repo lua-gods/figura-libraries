@@ -25,6 +25,7 @@ local mod = {
    filters = {
       player = {
          players = {
+            [avatar:getUUID()] = true, -- whitelist yourself
             -- ["someone"] = true,
             -- ["some uuid"] = true,
          },
@@ -44,6 +45,8 @@ local mod = {
    },
 
    selfPat = false, -- for debugging
+
+   skipUuidVerificationForNewPatpatProtocol = false,
 }
 
 mod.events = {
@@ -169,12 +172,6 @@ end
 ---@param time number?
 ---@return boolean?
 function mod.receivePats(entity, mode, pos, time)
-   -- rate limit
-   local sysTime = client.getSystemTime()
-   if minPatTime > sysTime then
-      return
-   end
-   minPatTime = sysTime + mod.minPatDelay
    local myPos
    if mode == 2 then
       if type(pos) ~= "Vector3" then
@@ -187,6 +184,12 @@ function mod.receivePats(entity, mode, pos, time)
    if (entity:getPos() - myPos):length() > mod.maxPatRange then
       return
    end
+   -- rate limit
+   local sysTime = client.getSystemTime()
+   if minPatTime > sysTime then
+      return
+   end
+   minPatTime = sysTime + mod.minPatDelay
    -- check if petting allowed
    if not mod.filterPlayer(entity, mode == 2) then
       return
@@ -270,14 +273,10 @@ function mod.safePcall(func)
    return ok
 end
 
----@param fallback string
----@return string
-function mod.getCaller(fallback)
-   return fallback
-end
-
 ---@diagnostic disable-next-line: undefined-global
 if silly and silly.backports and silly.backports.getCaller then
+   ---@param fallback string?
+   ---@return string
    function mod.getCaller(fallback)
       ---@diagnostic disable-next-line: undefined-global
       return silly.backports:getCaller() or fallback
@@ -292,35 +291,26 @@ function mod.patHandlers.add(func)
    table.insert(mod.patHandlers, func)
 end
 
--- new patpat standard
-mod.patHandlers.add(function(value, uuid, vars)
-   local canPat = false
-   local ok = mod.safePcall(function()
-      if type(value) == "Vector3" then
-         canPat = vars.patpat.skull(myUuid, value.x, value.y, value.z, mod.holdFor)
-      else
-         canPat = vars.patpat.player(myUuid, mod.holdFor)
-      end
-   end)
-   if ok and canPat then
-      return true
-   end
-   return false
-end)
+mod.securePatChecks = {}
 
-avatar:store("patpat", {
-   player = function(uuid, time)
-      uuid = mod.getCaller(uuid)
-      local entity = world.getEntity(uuid)
-      return mod.receivePats(entity, 1, nil, time)
-   end,
-   skull = function(uuid, x, y, z, time)
-      uuid = mod.getCaller(uuid)
-      local entity = world.getEntity(uuid)
-      local pos = vec(x, y, z)
-      return mod.receivePats(entity, 2, pos, time)
-   end,
-})
+---@param entity Entity
+---@param uuid string
+---@return Entity?
+function mod.validateEntity(entity, uuid)
+   if mod.getCaller then
+      if uuid == mod.getCaller(uuid) then
+         return entity
+      end
+      return
+   end
+   local vars = entity:getVariable()
+   for _, v in ipairs(mod.securePatChecks) do
+      if v(vars) then
+         return
+      end
+   end
+   return entity
+end
 
 -- catpat
 mod.patHandlers.add(function(value, uuid, vars)
@@ -338,6 +328,10 @@ mod.patHandlers.add(function(value, uuid, vars)
       return true
    end
    return false
+end)
+
+table.insert(mod.securePatChecks, function(vars)
+   return vars.catpat ~= nil
 end)
 
 local catpatAvatarVars = {}
@@ -365,6 +359,55 @@ function catpatAvatarVars.pat(uuid, mode, x, y, z)
 end
 
 avatar:store("catpat", catpatAvatarVars)
+
+-- new patpat standard
+
+---@param uuid string
+---@return Entity?
+local function newPatGetEntity(uuid)
+   local entity = world.getEntity(uuid)
+   local skip = mod.skipUuidVerificationForNewPatpatProtocol
+   local vars = entity:getVariable("patpat")
+   local target = vars and vars.target
+   if not skip or target then
+      if target == myUuid then
+         return entity
+      end
+      return
+   end
+   return mod.validateEntity(entity, uuid)
+end
+
+local newpatVars = {
+   player = function(uuid, time)
+      local entity = newPatGetEntity(uuid)
+      return mod.receivePats(entity, 1, nil, time)
+   end,
+   skull = function(uuid, x, y, z, time)
+      local entity = newPatGetEntity(uuid)
+      local pos = vec(x, y, z)
+      return mod.receivePats(entity, 2, pos, time)
+   end,
+}
+
+avatar:store("patpat", newpatVars)
+
+mod.patHandlers.add(function(value, uuid, vars)
+   local canPat = false
+   newpatVars.target = uuid
+   local ok = mod.safePcall(function()
+      if type(value) == "Vector3" then
+         canPat = vars.patpat.skull(myUuid, value.x, value.y, value.z, mod.holdFor)
+      else
+         canPat = vars.patpat.player(myUuid, mod.holdFor)
+      end
+   end)
+   newpatVars.target = nil
+   if ok and canPat then
+      return true
+   end
+   return false
+end)
 
 ---@param a string|number
 ---@param b number?
