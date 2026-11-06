@@ -46,7 +46,7 @@ local mod = {
 
    selfPat = false, -- for debugging
 
-   skipUuidVerificationForNewPatpatProtocol = false,
+   skipUuidVerificationForNewPatpatProtocol = true,
 }
 
 mod.events = {
